@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채팅 애플리케이션</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+<div id="onboardingContainer" class="min-h-screen flex justify-center items-center">
+    <div class="max-w-md w-full bg-white p-8 rounded shadow-lg">
+        <h1 class="text-xl font-bold mb-4">채팅 참여</h1>
+        <p id="error" class="text-red-500 mb-1 hidden">사용자 이름을 입력해주세요.</p>
+        <input type="text" id="onboardingUsernameInput" placeholder="사용자 이름"
+               class="w-full mb-4 p-2 rounded border border-gray-300 focus:outline-none focus:ring focus:border-blue-500">
+        <button id="enterButton" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">입장</button>
+    </div>
+</div>
+
+<div id="chatContainer" class="hidden min-h-screen flex justify-center items-center">
+    <div class="max-w-md w-full bg-white p-8 rounded shadow-lg">
+        <div>
+            이름:
+            <input type="text" id="usernameInput" placeholder="유저 이름"
+                   class="p-2 rounded-l border border-gray-300 " disabled>
+        </div>
+        <div id="messages" class="messages h-48 overflow-y-auto mb-4">
+        </div>
+        <div class="flex">
+            <input type="text" id="messageInput" placeholder="메시지를 입력하세요..."
+                   class="flex-1 p-2 rounded-l border border-gray-300 focus:outline-none focus:ring focus:border-blue-500">
+            <button id="sendButton" class="p-2 bg-blue-500 text-white rounded-r border border-blue-500">전송</button>
+        </div>
+    </div>
+</div>
+<script>
+    const onboardingUsernameInput = document.getElementById('onboardingUsernameInput');
+    const enterButton = document.getElementById('enterButton');
+    const onboardingContainer = document.getElementById('onboardingContainer');
+    const chatContainer = document.getElementById('chatContainer');
+    const usernameInput = document.getElementById('usernameInput');
+    const messages = document.getElementById('messages');
+
+
+    let userName = `익명#${(Math.random()).toString().substring(2, 6)}`;
+    let ws = null;
+
+    onboardingUsernameInput.value = userName;
+
+    function setUserName(newUserName) {
+        userName = newUserName;
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+
+        if (input.value) {
+            const message = {
+                username: userName,
+                message: input.value
+            };
+
+            let messageJSON = JSON.stringify(message);
+            ws.send(messageJSON);
+            input.value = '';
+        }
+    }
+
+    enterButton.addEventListener('click', function () {
+        const username = document.getElementById('onboardingUsernameInput').value;
+
+        if (!username) {
+            alert('사용자 이름을 입력하세요.');
+            return;
+        }
+
+        setUserName(username)
+        usernameInput.value = userName
+
+        ws = new WebSocket(`ws://localhost:8000/chat/connect`);
+
+        ws.onmessage = function (event) {
+            const message = document.createElement('div');
+            message.classList.add('message');
+
+            const data = JSON.parse(event.data);
+            message.textContent = `${data.username}: ${data.message}`;
+
+            messages.appendChild(message);
+            messages.scrollTop = messages.scrollHeight;
+        };
+
+        ws.onclose = function (event) {
+            const message = document.createElement('div');
+            message.classList.add('message');
+            message.textContent = "연결이 종료되었습니다.";
+
+            messages.appendChild(message);
+            messages.scrollTop = messages.scrollHeight;
+        };
+
+        onboardingContainer.classList.add('hidden');
+        chatContainer.classList.remove('hidden');
+    });
+
+
+    document.getElementById('sendButton').addEventListener('click', function () {
+        sendMessage();
+    });
+
+    document.getElementById('messageInput').addEventListener('keypress', function (event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+</script>
+</body>
+</html>
