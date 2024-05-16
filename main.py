@@ -1,3 +1,6 @@
+import asyncio
+import random
+
 from fastapi import FastAPI, Request
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
@@ -7,7 +10,6 @@ from connection_manager import ConnectionManager
 from message import Message
 
 app = FastAPI()
-
 templates = Jinja2Templates(directory="templates")
 
 manager = ConnectionManager()
@@ -39,3 +41,22 @@ async def root(request: Request):
         request=request,
         name='chat.html',
     )
+
+
+async def broadcast_emotion_message():
+    emotion_messages = ["불안이", "당황이", "분노가", "슬픔이", "중립이", "행복이", "혐오가"]
+    while True:
+        await asyncio.sleep(30)
+
+        random_emotion_text = random.choice(emotion_messages)
+        await manager.broadcast(
+            Message(
+                username="[System]",
+                message=(f"누군가의 {random_emotion_text} 느껴집니다."),
+            )
+        )
+
+
+@app.on_event("startup")
+async def startup_event():
+    await asyncio.create_task(broadcast_emotion_message())
