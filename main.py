@@ -58,5 +58,5 @@ async def broadcast_emotion_message():
 
 
 @app.on_event("startup")
-async def startup_event():
-    await asyncio.create_task(broadcast_emotion_message())
+def startup_event():
+    asyncio.create_task(broadcast_emotion_message())
