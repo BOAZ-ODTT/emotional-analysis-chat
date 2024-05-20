@@ -17,21 +17,239 @@
     </div>
 </div>
 
-<div id="chatContainer" class="hidden min-h-screen flex justify-center items-center">
-    <div class="max-w-md w-full bg-white p-8 rounded shadow-lg">
+<!--?수정은 여기 overflow hidden 을 제거-->
+<div id="chatContainer" class="hidden flex h-screen w-full flex-col bg-gray-100 overflow-hidden">
+  <header class="flex h-14 shrink-0 items-center justify-between border-b bg-white px-4">
+    <div class="flex items-center gap-2">
         <div>
             이름:
             <input type="text" id="usernameInput" placeholder="유저 이름"
                    class="p-2 rounded-l border border-gray-300 " disabled>
         </div>
-        <div id="messages" class="messages h-48 overflow-y-auto mb-4">
-        </div>
-        <div class="flex">
-            <input type="text" id="messageInput" placeholder="메시지를 입력하세요..."
-                   class="flex-1 p-2 rounded-l border border-gray-300 focus:outline-none focus:ring focus:border-blue-500">
-            <button id="sendButton" class="p-2 bg-blue-500 text-white rounded-r border border-blue-500">전송</button>
-        </div>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="h-6 w-6 text-gray-500"
+      >
+        <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"></path>
+        <rect width="18" height="18" x="3" y="4" rx="2"></rect>
+        <circle cx="12" cy="10" r="2"></circle>
+        <line x1="8" x2="8" y1="2" y2="4"></line>
+        <line x1="16" x2="16" y1="2" y2="4"></line>
+      </svg>
+      <h1 class="text-lg font-semibold">Chat Rooms</h1>
     </div>
+    <div class="flex items-center gap-2">
+      <button class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 rounded-full">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="h-5 w-5 text-gray-500"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+      </button>
+      <button class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 rounded-full">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="h-5 w-5 text-gray-500"
+        >
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </button>
+    </div>
+  </header>
+  <div class="flex h-full">
+    <div class="hidden w-64 shrink-0 border-r bg-gray-50 p-4 md:block">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-sm font-semibold">Active Rooms</h2>
+        <button class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 rounded-full">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-5 w-5 text-gray-500"
+          >
+            <path d="M5 12h14"></path>
+            <path d="M12 5v14"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="space-y-2">
+        <a
+          class="flex items-center gap-3 rounded-lg bg-white p-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100"
+          href="#"
+        >
+          <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
+            <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">JP</span>
+          </span>
+          <div class="flex-1">
+            <div class="line-clamp-1">General Chat</div>
+            <div class="text-xs text-gray-500">12 active users</div>
+          </div>
+        </a>
+        <a
+          class="flex items-center gap-3 rounded-lg bg-white p-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100"
+          href="#"
+        >
+          <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
+            <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">CN</span>
+          </span>
+          <div class="flex-1">
+            <div class="line-clamp-1">Design Feedback</div>
+            <div class="text-xs text-gray-500">8 active users</div>
+          </div>
+        </a>
+        <a
+          class="flex items-center gap-3 rounded-lg bg-white p-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100"
+          href="#"
+        >
+          <span class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full">
+            <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">ML</span>
+          </span>
+          <div class="flex-1">
+            <div class="line-clamp-1">Engineering Discussions</div>
+            <div class="text-xs text-gray-500">15 active users</div>
+          </div>
+        </a>
+      </div>
+      <div class="mt-4 mb-2 text-sm font-semibold">Active Users</div>
+      <div class="flex flex-wrap gap-2">
+        <span class="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
+          <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">JP</span>
+        </span>
+        <span class="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
+          <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">CN</span>
+        </span>
+        <span class="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
+          <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">ML</span>
+        </span>
+        <span class="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
+          <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">SD</span>
+        </span>
+        <span class="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
+          <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">TN</span>
+        </span>
+        <span class="relative flex shrink-0 overflow-hidden rounded-full w-8 h-8">
+          <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">LR</span>
+        </span>
+      </div>
+    </div>
+    <div class="flex-1">
+      <div class="flex h-full flex-col">
+<!--?          여기 h를 h-full로 변경-->
+        <div id="chatspace" class="overflow-y-scroll p-4 h-[80vh]">
+          <div class="space-y-4">
+<!--?            <div class="flex items-start gap-3">-->
+<!--?              <span class="relative flex h-10 w-10 overflow-hidden rounded-full shrink-0">-->
+<!--?                <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">JP</span>-->
+<!--?              </span>-->
+<!--?              <div class="rounded-lg bg-white p-3 shadow-sm">-->
+<!--?                <div class="font-medium">Jared Palmer</div>-->
+<!--?                <div class="text-sm text-gray-500">-->
+<!--?                  Hey everyone, I have a question about the new design proposal. Can we discuss it in the-->
+<!--?                  #design-feedback channel?-->
+<!--?                </div>-->
+<!--?                <div class="mt-2 text-xs text-gray-500">10:45 AM</div>-->
+<!--?              </div>-->
+<!--?            </div>-->
+<!--?            <div class="flex items-start gap-3">-->
+<!--?              <span class="relative flex h-10 w-10 overflow-hidden rounded-full shrink-0">-->
+<!--?                <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">JP</span>-->
+<!--?              </span>-->
+<!--?              <div class="rounded-lg bg-white p-3 shadow-sm">-->
+<!--?                <div class="font-medium">Jared Palmer</div>-->
+<!--?                <div class="text-sm text-gray-500">-->
+<!--?                  Hey everyone, I have a question about the new design proposal. Can we discuss it in the-->
+<!--?                  #design-feedback channel?-->
+<!--?                </div>-->
+<!--?                <div class="mt-2 text-xs text-gray-500">10:45 AM</div>-->
+<!--?              </div>-->
+<!--?            </div>-->
+<!--?            <div class="flex items-start gap-3">-->
+<!--?              <span class="relative flex h-10 w-10 overflow-hidden rounded-full shrink-0">-->
+<!--?                <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">ML</span>-->
+<!--?              </span>-->
+<!--?              <div class="rounded-lg bg-white p-3 shadow-sm">-->
+<!--?                <div class="font-medium">Max Leiter</div>-->
+<!--?                <div class="text-sm text-gray-500">-->
+<!--?                  Sounds good. I'll head over to the design channel.-->
+<!--?                </div>-->
+<!--?                <div class="mt-2 text-xs text-gray-500">10:47 AM</div>-->
+<!--?              </div>-->
+<!--?            </div>-->
+<!--?            <div class="flex items-start gap-3 justify-end">-->
+<!--?              <div class="rounded-lg bg-blue-500 p-3 text-white shadow-sm">-->
+<!--?                <div id="messages" class="messages h-48 overflow-y-auto mb-4">-->
+<!--?                </div>-->
+<!--?                <div>Sure, let's discuss it there.</div>-->
+<!--?                <div class="mt-2 text-xs">10:46 AM</div>-->
+<!--?              </div>-->
+<!--?              <span class="relative flex h-10 w-10 overflow-hidden rounded-full shrink-0">-->
+<!--?                <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">CN</span>-->
+<!--?              </span>-->
+<!--?            </div>-->
+          </div>
+        </div>
+<!--?          여기 h를 h-16으로 변경-->
+        <div class="flex h-[15vh] shrink-0 items-center border-t bg-white px-4">
+          <input id="messageInput"
+            class="flex h-10 w-full border border-input ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1 rounded-lg bg-gray-100 px-4 py-2 text-sm focus:bg-white"
+            placeholder="Type your message..."
+            type="text"
+          />
+          <button id="sendButton"
+                  class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 ml-2 rounded-full">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="h-5 w-5 text-gray-500"
+            >
+              <path d="m22 2-7 20-4-9-9-4Z"></path>
+              <path d="M22 2 11 13"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <script>
     const onboardingUsernameInput = document.getElementById('onboardingUsernameInput');
@@ -66,6 +284,98 @@
         }
     }
 
+    function createMessageElement(messageContent, timestamp) {
+        // 메시지 요소를 생성합니다.
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('flex', 'items-start', 'gap-3', 'justify-end', 'mt-5', 'mb-5');
+
+        // 내용을 포함하는 레이아웃을 생성합니다.
+        const messageLayout = document.createElement('div');
+        messageLayout.classList.add('rounded-lg', 'bg-blue-500', 'p-3', 'text-white', 'shadow-sm');
+
+        // 메시지 내용을 추가합니다.
+        const messageContentElement = document.createElement('div');
+        messageContentElement.textContent = messageContent;
+        messageLayout.appendChild(messageContentElement);
+
+        // 타임스탬프를 추가합니다.
+        const timestampElement = document.createElement('div');
+        timestampElement.textContent = timestamp;
+        timestampElement.classList.add('mt-2', 'text-xs');
+        messageLayout.appendChild(timestampElement);
+
+        // 메시지 요소에 레이아웃을 추가합니다.
+        messageElement.appendChild(messageLayout);
+
+        // 보낸 사람 아이콘을 추가합니다.
+        const senderIcon = document.createElement('span');
+        senderIcon.classList.add('relative', 'flex', 'h-10', 'w-10', 'overflow-hidden', 'rounded-full', 'shrink-0');
+        const senderInitials = document.createElement('span');
+        senderInitials.classList.add('flex', 'h-full', 'w-full', 'items-center', 'justify-center', 'rounded-full', 'bg-muted');
+        senderInitials.textContent = 'CN'; // 여기에 보낸 사람의 이니셜을 넣으십시오.
+        senderIcon.appendChild(senderInitials);
+        messageElement.appendChild(senderIcon);
+
+        return messageElement;
+    }
+    function createOtherElement(name, message, timestamp) {
+        // 메시지를 감싸는 div 요소 생성
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('flex', 'items-start', 'gap-3', 'mt-5', 'mb-5');
+
+        // 프로필 이미지를 감싸는 span 요소 생성
+        const profileImageSpan = document.createElement('span');
+        profileImageSpan.classList.add('relative', 'flex', 'h-10', 'w-10', 'overflow-hidden', 'rounded-full', 'shrink-0');
+
+        // 프로필 이미지 생성 및 설정
+        const profileImage = document.createElement('span');
+        profileImage.classList.add('flex', 'h-full', 'w-full', 'items-center', 'justify-center', 'rounded-full', 'bg-muted');
+        profileImage.textContent = name.charAt(0); // 이름의 첫 글자를 프로필 이미지로 사용
+        profileImageSpan.appendChild(profileImage);
+
+        // 메시지 내용을 감싸는 div 요소 생성
+        const messageContentDiv = document.createElement('div');
+        messageContentDiv.classList.add('rounded-lg', 'bg-white', 'p-3', 'shadow-sm');
+
+        // 이름을 표시하는 div 요소 생성 및 설정
+        const nameDiv = document.createElement('div');
+        nameDiv.classList.add('font-medium');
+        nameDiv.textContent = name;
+
+        // 메시지 내용을 표시하는 div 요소 생성 및 설정
+        const messageDivInner = document.createElement('div');
+        messageDivInner.classList.add('text-sm', 'text-gray-500');
+        messageDivInner.textContent = message;
+
+        // 타임스탬프를 표시하는 div 요소 생성 및 설정
+        const timestampDiv = document.createElement('div');
+        timestampDiv.classList.add('mt-2', 'text-xs', 'text-gray-500');
+        timestampDiv.textContent = timestamp;
+
+        // 생성한 요소들을 조립하여 메시지 div에 추가
+        messageContentDiv.appendChild(nameDiv);
+        messageContentDiv.appendChild(messageDivInner);
+        messageContentDiv.appendChild(timestampDiv);
+
+        messageDiv.appendChild(profileImageSpan);
+        messageDiv.appendChild(messageContentDiv);
+
+        return messageDiv;
+    }
+
+    // 새 메시지를 추가하는 함수
+    function addMessage(messageContent, timestamp, isSystem) {
+        const messagesContainer = document.getElementById('chatspace');
+        let messageElement;
+        if (isSystem)
+            messageElement = createOtherElement("System", messageContent, timestamp)
+        else
+            messageElement = createMessageElement(messageContent, timestamp);
+        messagesContainer.appendChild(messageElement);
+        // 스크롤을 맨 아래로 이동합니다.
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
     enterButton.addEventListener('click', function () {
         const username = document.getElementById('onboardingUsernameInput').value;
 
@@ -80,14 +390,19 @@
         ws = new WebSocket(`ws://localhost:8000/chat/connect`);
 
         ws.onmessage = function (event) {
-            const message = document.createElement('div');
-            message.classList.add('message');
+            <!--?const message = document.createElement('div');-->
+            <!--?message.classList.add('message');-->
 
+            <!--?const data = JSON.parse(event.data);-->
+            <!--?message.textContent = `${data.username}: ${data.message}`;-->
             const data = JSON.parse(event.data);
-            message.textContent = `${data.username}: ${data.message}`;
 
-            messages.appendChild(message);
-            messages.scrollTop = messages.scrollHeight;
+            <!--?messages.appendChild(message);-->
+            if (data.username === "[System]")
+                addMessage(`${data.username}: ${data.message}`, "10:46 AM", true);
+            else
+                addMessage(`${data.username}: ${data.message}`, "10:46 AM", false);
+            // messages.scrollTop = messages.scrollHeight;
         };
 
         ws.onclose = function (event) {
