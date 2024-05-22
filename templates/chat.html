@@ -235,7 +235,7 @@
         }
     }
 
-    function createMessageElement(messageContent, timestamp) {
+    function createMessageElement(name, messageContent, timestamp) {
         // 메시지 요소를 생성합니다.
         const messageElement = document.createElement('div');
         messageElement.classList.add('flex', 'items-start', 'gap-3', 'justify-end', 'mt-5', 'mb-5');
@@ -263,7 +263,7 @@
         senderIcon.classList.add('relative', 'flex', 'h-10', 'w-10', 'overflow-hidden', 'rounded-full', 'shrink-0');
         const senderInitials = document.createElement('span');
         senderInitials.classList.add('flex', 'h-full', 'w-full', 'items-center', 'justify-center', 'rounded-full', 'bg-muted');
-        senderInitials.textContent = 'CN'; // 여기에 보낸 사람의 이니셜을 넣으십시오.
+        senderInitials.textContent = name.charAt(0); // 여기에 보낸 사람의 이니셜을 넣으십시오.
         senderIcon.appendChild(senderInitials);
         messageElement.appendChild(senderIcon);
 
@@ -315,13 +315,13 @@
     }
 
     // 새 메시지를 추가하는 함수
-    function addMessage(messageContent, timestamp, isSystem) {
+    function addMessage(name, message, timestamp, isSystem) {
         const messagesContainer = document.getElementById('chatspace');
         let messageElement;
         if (isSystem)
-            messageElement = createOtherElement("System", messageContent, timestamp)
+            messageElement = createOtherElement(name, message, timestamp)
         else
-            messageElement = createMessageElement(messageContent, timestamp);
+            messageElement = createMessageElement(name, message, timestamp);
         messagesContainer.appendChild(messageElement);
         // 스크롤을 맨 아래로 이동합니다.
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -342,10 +342,10 @@
 
         ws.onmessage = function (event) {
             const data = JSON.parse(event.data);
-            if (data.username === "[System]")
-                addMessage(`${data.username}: ${data.message}`, "10:46 AM", true);
+            if (data.username === "System")
+                addMessage(data.username, data.message, "10:46 AM", true);
             else
-                addMessage(`${data.username}: ${data.message}`, "10:46 AM", false);
+                addMessage(data.username, data.message, "10:46 AM", false);
         };
 
         ws.onclose = function (event) {
