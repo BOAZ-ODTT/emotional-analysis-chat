@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>감정 분석 채팅</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>감정 분석 채팅</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
 <body class="bg-gray-100 font-sans">
 <div id="onboardingContainer" class="min-h-screen flex justify-center items-center">
     <div class="max-w-md w-full bg-white p-8 rounded shadow-lg">
@@ -170,55 +170,6 @@
 <!--?          여기 h를 h-full로 변경-->
         <div id="chatspace" class="overflow-y-scroll p-4 h-[80vh]">
           <div class="space-y-4">
-<!--?            <div class="flex items-start gap-3">-->
-<!--?              <span class="relative flex h-10 w-10 overflow-hidden rounded-full shrink-0">-->
-<!--?                <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">JP</span>-->
-<!--?              </span>-->
-<!--?              <div class="rounded-lg bg-white p-3 shadow-sm">-->
-<!--?                <div class="font-medium">Jared Palmer</div>-->
-<!--?                <div class="text-sm text-gray-500">-->
-<!--?                  Hey everyone, I have a question about the new design proposal. Can we discuss it in the-->
-<!--?                  #design-feedback channel?-->
-<!--?                </div>-->
-<!--?                <div class="mt-2 text-xs text-gray-500">10:45 AM</div>-->
-<!--?              </div>-->
-<!--?            </div>-->
-<!--?            <div class="flex items-start gap-3">-->
-<!--?              <span class="relative flex h-10 w-10 overflow-hidden rounded-full shrink-0">-->
-<!--?                <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">JP</span>-->
-<!--?              </span>-->
-<!--?              <div class="rounded-lg bg-white p-3 shadow-sm">-->
-<!--?                <div class="font-medium">Jared Palmer</div>-->
-<!--?                <div class="text-sm text-gray-500">-->
-<!--?                  Hey everyone, I have a question about the new design proposal. Can we discuss it in the-->
-<!--?                  #design-feedback channel?-->
-<!--?                </div>-->
-<!--?                <div class="mt-2 text-xs text-gray-500">10:45 AM</div>-->
-<!--?              </div>-->
-<!--?            </div>-->
-<!--?            <div class="flex items-start gap-3">-->
-<!--?              <span class="relative flex h-10 w-10 overflow-hidden rounded-full shrink-0">-->
-<!--?                <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">ML</span>-->
-<!--?              </span>-->
-<!--?              <div class="rounded-lg bg-white p-3 shadow-sm">-->
-<!--?                <div class="font-medium">Max Leiter</div>-->
-<!--?                <div class="text-sm text-gray-500">-->
-<!--?                  Sounds good. I'll head over to the design channel.-->
-<!--?                </div>-->
-<!--?                <div class="mt-2 text-xs text-gray-500">10:47 AM</div>-->
-<!--?              </div>-->
-<!--?            </div>-->
-<!--?            <div class="flex items-start gap-3 justify-end">-->
-<!--?              <div class="rounded-lg bg-blue-500 p-3 text-white shadow-sm">-->
-<!--?                <div id="messages" class="messages h-48 overflow-y-auto mb-4">-->
-<!--?                </div>-->
-<!--?                <div>Sure, let's discuss it there.</div>-->
-<!--?                <div class="mt-2 text-xs">10:46 AM</div>-->
-<!--?              </div>-->
-<!--?              <span class="relative flex h-10 w-10 overflow-hidden rounded-full shrink-0">-->
-<!--?                <span class="flex h-full w-full items-center justify-center rounded-full bg-muted">CN</span>-->
-<!--?              </span>-->
-<!--?            </div>-->
           </div>
         </div>
 <!--?          여기 h를 h-16으로 변경-->
@@ -390,19 +341,11 @@
         ws = new WebSocket(`ws://localhost:8000/chat/connect`);
 
         ws.onmessage = function (event) {
-            <!--?const message = document.createElement('div');-->
-            <!--?message.classList.add('message');-->
-
-            <!--?const data = JSON.parse(event.data);-->
-            <!--?message.textContent = `${data.username}: ${data.message}`;-->
             const data = JSON.parse(event.data);
-
-            <!--?messages.appendChild(message);-->
             if (data.username === "[System]")
                 addMessage(`${data.username}: ${data.message}`, "10:46 AM", true);
             else
                 addMessage(`${data.username}: ${data.message}`, "10:46 AM", false);
-            // messages.scrollTop = messages.scrollHeight;
         };
 
         ws.onclose = function (event) {
