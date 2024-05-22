@@ -15,10 +15,9 @@ templates = Jinja2Templates(directory="templates")
 manager = ConnectionManager()
 
 
+# 입장 버튼 누른 이후
 @app.websocket("/chat/connect")
-async def websocket_endpoint(
-        websocket: WebSocket,
-):
+async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     await manager.broadcast(Message(
         username='[System]', message='누군가 방에 입장했습니다.'
@@ -35,6 +34,7 @@ async def websocket_endpoint(
         await manager.broadcast(Message(username="[System]", message="누군가 방에서 나갔습니다."))
 
 
+# root
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse(
