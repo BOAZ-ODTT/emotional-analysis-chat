@@ -338,7 +338,8 @@
         setUserName(username)
         usernameInput.value = userName
 
-        ws = new WebSocket(`ws://localhost:8000/chat/connect`);
+        // TODO: env 및 도메인으로 변경
+        ws = new WebSocket(`ws://34.64.139.68:8000/chat/connect`);
 
         ws.onmessage = function (event) {
             const data = JSON.parse(event.data);
