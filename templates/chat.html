@@ -327,6 +327,20 @@
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
+    function getCurrentTimeFormatted() {
+      const now = new Date();
+
+      let hours = now.getHours();
+      const minutes = now.getMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+      const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+
+      return `${hours}:${minutesStr} ${ampm}`;
+    }
+
+
     enterButton.addEventListener('click', function () {
         const username = document.getElementById('onboardingUsernameInput').value;
 
@@ -343,9 +357,9 @@
         ws.onmessage = function (event) {
             const data = JSON.parse(event.data);
             if (data.username === "System")
-                addMessage(data.username, data.message, "10:46 AM", true);
+                addMessage(data.username, data.message, getCurrentTimeFormatted(), true);
             else
-                addMessage(data.username, data.message, "10:46 AM", false);
+                addMessage(data.username, data.message, getCurrentTimeFormatted(), false);
         };
 
         ws.onclose = function (event) {
