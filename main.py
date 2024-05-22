@@ -20,7 +20,7 @@ manager = ConnectionManager()
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     await manager.broadcast(Message(
-        username='[System]', message='누군가 방에 입장했습니다.'
+        username='System', message='누군가 방에 입장했습니다.'
     ))
 
     try:
@@ -51,7 +51,7 @@ async def broadcast_emotion_message():
         random_emotion_text = random.choice(emotion_messages)
         await manager.broadcast(
             Message(
-                username="[System]",
+                username="System",
                 message=(f"누군가의 {random_emotion_text} 느껴집니다."),
             )
         )
