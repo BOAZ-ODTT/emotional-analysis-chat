@@ -36,4 +36,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: start fast api
       run: |
-        timeout 5s uvicorn main:app --reload
+        uvicorn main:app --reload & pid=$! && sleep 10 && kill -SIGINT $pid
