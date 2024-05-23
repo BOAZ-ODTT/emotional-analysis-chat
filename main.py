@@ -2,6 +2,7 @@ import asyncio
 import random
 
 from fastapi import FastAPI, Request
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -19,11 +20,12 @@ manager = ConnectionManager()
 @app.websocket("/chat/connect")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
-    await manager.broadcast(Message(
-        username='[System]', message='누군가 방에 입장했습니다.'
-    ))
 
     try:
+        await manager.broadcast(Message(
+            username='System', message='누군가 방에 입장했습니다.'
+        ))
+
         while True:
             data = await websocket.receive_text()
             message = Message.parse_raw(data)
