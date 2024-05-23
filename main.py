@@ -33,7 +33,7 @@ async def websocket_endpoint(websocket: WebSocket):
             await manager.broadcast(message)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        await manager.broadcast(Message(username="[System]", message="누군가 방에서 나갔습니다."))
+        await manager.broadcast(Message(username="System", message="누군가 방에서 나갔습니다."))
 
 
 # root
@@ -53,7 +53,7 @@ async def broadcast_emotion_message():
         random_emotion_text = random.choice(emotion_messages)
         await manager.broadcast(
             Message(
-                username="[System]",
+                username="System",
                 message=(f"누군가의 {random_emotion_text} 느껴집니다."),
             )
         )
