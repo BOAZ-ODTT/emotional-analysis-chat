@@ -7,7 +7,7 @@ from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from connected_user import UserConnection
+from user_connection import UserConnection
 from connection_manager import ConnectionManager
 from inference import predict_emotion
 from message import Message

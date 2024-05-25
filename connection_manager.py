@@ -1,4 +1,4 @@
-from connected_user import UserConnection
+from user_connection import UserConnection
 from message import Message
 
 
