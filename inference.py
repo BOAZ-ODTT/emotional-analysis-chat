@@ -151,7 +151,7 @@ emotion_map = {
 # 저장한 모델 불러오기
 loaded_model = BERTClassifier(bertmodel, dr_rate=0.5).to(device)
 checkpoint_path = './saved_model.pth'  # 모델 체크포인트 파일 경로
-state_dict = torch.load(checkpoint_path)
+state_dict = torch.load(checkpoint_path, map_location=device)
 loaded_model.load_state_dict(state_dict, strict=False)
 loaded_model.eval()
 
