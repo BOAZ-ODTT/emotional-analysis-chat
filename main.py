@@ -19,11 +19,12 @@ manager = ConnectionManager()
 @app.websocket("/chat/connect")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
-    await manager.broadcast(Message(
-        username='System', message='누군가 방에 입장했습니다.'
-    ))
 
     try:
+        await manager.broadcast(Message(
+            username='System', message='누군가 방에 입장했습니다.'
+        ))
+
         while True:
             data = await websocket.receive_text()
             message = Message.parse_raw(data)
@@ -31,7 +32,7 @@ async def websocket_endpoint(websocket: WebSocket):
             await manager.broadcast(message)
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-        await manager.broadcast(Message(username="[System]", message="누군가 방에서 나갔습니다."))
+        await manager.broadcast(Message(username="System", message="누군가 방에서 나갔습니다."))
 
 
 # root
