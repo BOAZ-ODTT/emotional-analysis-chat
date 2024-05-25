@@ -37,6 +37,7 @@ async def websocket_endpoint(
             message = Message.parse_raw(data)
 
             await connection_manager.broadcast(message)
+            user.add_message(message)
 
     except WebSocketDisconnect:
         connection_manager.disconnect(user)
