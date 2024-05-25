@@ -14,6 +14,8 @@
         <input type="text" id="onboardingUsernameInput" placeholder="사용자 이름"
                class="w-full mb-4 p-2 rounded border border-gray-300 focus:outline-none focus:ring focus:border-blue-500">
         <button id="enterButton" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">입장</button>
+        <button id="createRoomButton" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">새 채팅방 만들기</button>
+        <button id="joinRoomButton" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 mt-2">기존 채팅방에 참여하기</button>
     </div>
 </div>
 
@@ -205,6 +207,7 @@
 <script>
     const onboardingUsernameInput = document.getElementById('onboardingUsernameInput');
     const enterButton = document.getElementById('enterButton');
+    const createRoomButton = document.getElementById('createRoomButton')
     const onboardingContainer = document.getElementById('onboardingContainer');
     const chatContainer = document.getElementById('chatContainer');
     const usernameInput = document.getElementById('usernameInput');
@@ -339,7 +342,7 @@
         usernameInput.value = userName
 
         // TODO: env 및 도메인으로 변경
-        ws = new WebSocket(`ws://34.64.139.68:8000/chat/connect`);
+        ws = new WebSocket(`ws://localhost:8000/chat/connect`);
 
         ws.onmessage = function (event) {
             const data = JSON.parse(event.data);
@@ -362,6 +365,43 @@
         chatContainer.classList.remove('hidden');
     });
 
+    createRoomButton.addEventListener('click', function() {
+        const username = document.getElementById('onboardingUsernameInput').value;
+
+        if (!username) {
+            alert('사용자 이름을 입력하세요.');
+            return;
+        }
+
+        setUserName(username);
+        usernameInput.value = userName;
+
+        ws = new WebSocket(`ws://localhost:8000/chat/new/connect`);
+
+        ws.onopen = function () {
+            ws.send(JSON.stringify({username: "System", message: `${username}님이 채팅방을 생성했습니다.`}));
+        };
+
+        ws.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (data.username === "System")
+                addMessage(`${data.username}: ${data.message}`, "10:46 AM", true);
+            else
+                addMessage(`${data.username}: ${data.message}`, "10:46 AM", false);
+        };
+
+        ws.onclose = function (event) {
+            const message = document.createElement('div');
+            message.classList.add('message');
+            message.textContent = "연결이 종료되었습니다.";
+
+            messages.appendChild(message);
+            messages.scrollTop = messages.scrollHeight;
+        };
+
+        onboardingContainer.classList.add('hidden');
+        chatContainer.classList.remove('hidden');
+    });
 
     document.getElementById('sendButton').addEventListener('click', function () {
         sendMessage();
