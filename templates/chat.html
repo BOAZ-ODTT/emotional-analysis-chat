@@ -211,13 +211,13 @@
     const messages = document.getElementById('messages');
 
 
-    let userName = `익명#${(Math.random()).toString().substring(2, 6)}`;
+    let username = `익명${(Math.random()).toString().substring(2, 6)}`;
     let ws = null;
 
-    onboardingUsernameInput.value = userName;
+    onboardingUsernameInput.value = username;
 
-    function setUserName(newUserName) {
-        userName = newUserName;
+    function setUsername(newUsername) {
+        username = newUsername;
     }
 
     function sendMessage() {
@@ -225,7 +225,7 @@
 
         if (input.value) {
             const message = {
-                username: userName,
+                username: username,
                 message: input.value
             };
 
@@ -336,8 +336,8 @@
             return;
         }
 
-        setUserName(username)
-        usernameInput.value = userName
+        setUsername(username)
+        usernameInput.value = username
 
         // TODO: env 및 도메인으로 변경
         ws = new WebSocket(`ws://34.64.139.68:8000/chat/connect?username=${username}`);
