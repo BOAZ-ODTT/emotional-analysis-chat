@@ -55,7 +55,7 @@ async def root(request: Request):
 
 async def broadcast_emotion_message():
     while True:
-        await asyncio.sleep(30)
+        await asyncio.sleep(20)
 
         connections = connection_manager.get_connections()
         if not connections:
@@ -71,10 +71,9 @@ async def broadcast_emotion_message():
         await connection_manager.broadcast(
             Message(
                 username="System",
-                message=f"누군가의 {emotion_text} 느껴집니다.",
+                message=f"{chose_connection.username}의 {emotion_text} 느껴집니다.",
             )
         )
-
 
 @app.on_event("startup")
 def startup_event():
