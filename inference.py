@@ -138,14 +138,14 @@ class BERTDataset(Dataset):
         return (len(self.labels))
 
 
-emotion_map = {
-    0: "불안",
-    1: "당황",
-    2: "분노",
-    3: "슬픔",
-    4: "중립",
-    5: "행복",
-    6: "혐오"
+emotion_keyword_map = {
+    0: "불안이",
+    1: "당황이",
+    2: "분노가",
+    3: "슬픔이",
+    4: "중립이",
+    5: "행복이",
+    6: "혐오가"
 }
 
 # 저장한 모델 불러오기
@@ -157,23 +157,9 @@ loaded_model.eval()
 
 # 하이퍼 파라미터 설정
 max_len = 64
-batch_size = 64
-warmup_ratio = 0.1
-num_epochs = 50
-max_grad_norm = 1
-log_interval = 200
-learning_rate = 5e-5
 
-# 입력을 계속해서 받기 위한 반복문
-while True:
-    # 예측할 문장 입력 받기
-    input_sentence = input("분류할 문장을 입력하세요 (종료하려면 'exit'을 입력하세요): ")
 
-    # 종료 조건 확인
-    if input_sentence.lower() == 'exit':
-        print("프로그램을 종료합니다.")
-        break
-
+def predict_emotion(input_sentence: str):
     # 입력 문장을 BERT 모델의 입력 형식으로 변환
     transform = BERTSentenceTransform(tokenizer, max_seq_length=max_len, vocab=vocab, pad=True, pair=False)
     input_data = transform([input_sentence])
@@ -192,5 +178,6 @@ while True:
         output = loaded_model(input_token_ids, input_valid_length, input_segment_ids)
         predicted_situation_label = torch.argmax(output, dim=1).item()
 
-    predicted_emotion = emotion_map.get(predicted_situation_label, "알 수 없는 감정")
-    print("Predicted Emotion:", predicted_emotion)
+    predicted_emotion = emotion_keyword_map.get(predicted_situation_label, "알 수 없는 감정")
+
+    return predicted_emotion
