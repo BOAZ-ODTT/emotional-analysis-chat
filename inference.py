@@ -1,33 +1,18 @@
 import numpy as np
-import torch
-from torch.utils.data import Dataset
 
 np.bool = np.bool_
-
 import gluonnlp as nlp
-
+import torch
+from torch import nn
 from kobert_tokenizer import KoBERTTokenizer
 from transformers import BertModel
+from torch.utils.data import Dataset
 
 # Torch GPU 설정
 device_type = 'cuda' if torch.cuda.is_available() else 'cpu'
 device = torch.device(device_type)
 
-
-class BERTDataset(Dataset):
-    def __init__(self, dataset, sent_idx, label_idx, bert_tokenizer, max_len,
-                 pad, pair):
-        transform = nlp.data.BERTSentenceTransform(
-            bert_tokenizer, max_seq_length=max_len, pad=pad, pair=pair)
-
-        self.sentences = [transform([i[sent_idx]]) for i in dataset]
-        self.labels = [np.int32(i[label_idx]) for i in dataset]
-
-    def __getitem__(self, i):
-        return (self.sentences[i] + (self.labels[i],))
-
-    def __len__(self):
-        return (len(self.labels))
+tokenizer = KoBERTTokenizer.from_pretrained('skt/kobert-base-v1')
 
 
 # kobert 공식 git에 있는 get_kobert_model 선언
@@ -41,73 +26,158 @@ def get_kobert_model(model_path, vocab_file, ctx="cpu"):
     return bertmodel, vocab_b_obj
 
 
-tokenizer = KoBERTTokenizer.from_pretrained('skt/kobert-base-v1')
 bertmodel, vocab = get_kobert_model('skt/kobert-base-v1', tokenizer.vocab_file)
-
-# 새로운 문장 테스트
-# 토큰화
 tok = nlp.data.BERTSPTokenizer(tokenizer, vocab, lower=False)
 
-# Setting parameters
+
+# BERTSentenceTransform 수정
+class BERTSentenceTransform:
+
+    def __init__(self, tokenizer, max_seq_length, vocab, pad=True, pair=True):
+        self._tokenizer = tokenizer
+        self._max_seq_length = max_seq_length
+        self._pad = pad
+        self._pair = pair
+        self._vocab = vocab
+
+    def __call__(self, line):
+
+        # 유니코드로 변환
+        text_a = line[0]
+        if self._pair:
+            assert len(line) == 2
+            text_b = line[1]
+
+        tokens_a = self._tokenizer.tokenize(text_a)
+        tokens_b = None
+
+        if self._pair:
+            tokens_b = self._tokenizer(text_b)
+
+        if tokens_b:
+            # 'tokens_a' 및 'tokens_b'를 수정하여 총 길이가 지정된 길이보다 작아지도록 함
+            # [CLS], [SEP], [SEP]에 해당하는 "- 3" 고려
+            self._truncate_seq_pair(tokens_a, tokens_b,
+                                    self._max_seq_length - 3)
+        else:
+            # [CLS] 및 [SEP]에 해당하는 "- 2" 고려
+            if len(tokens_a) > self._max_seq_length - 2:
+                tokens_a = tokens_a[0:(self._max_seq_length - 2)]
+
+        vocab = self._vocab
+        tokens = []
+        tokens.append(vocab.cls_token)
+        tokens.extend(tokens_a)
+        tokens.append(vocab.sep_token)
+        segment_ids = [0] * len(tokens)
+
+        if tokens_b:
+            tokens.extend(tokens_b)
+            tokens.append(vocab.sep_token)
+            segment_ids.extend([1] * (len(tokens) - len(segment_ids)))
+
+        input_ids = self._tokenizer.convert_tokens_to_ids(tokens)
+
+        # 문장의 길이
+        valid_length = len(input_ids)
+
+        if self._pad:
+            # 시퀀스 길이까지 제로 패딩
+            padding_length = self._max_seq_length - valid_length
+            # 나머지는 패딩 토큰으로 채움
+            input_ids.extend([vocab[vocab.padding_token]] * padding_length)
+            segment_ids.extend([0] * padding_length)
+
+        return np.array(input_ids, dtype='int32'), np.array(valid_length, dtype='int32'), \
+            np.array(segment_ids, dtype='int32')
+
+
+class BERTClassifier(nn.Module):
+    def __init__(self,
+                 bert,
+                 hidden_size=768,
+                 num_classes=7,  # 감정 클래스 수
+                 dr_rate=None,
+                 params=None):
+        super(BERTClassifier, self).__init__()
+        self.bert = bert
+        self.dr_rate = dr_rate
+
+        self.classifier = nn.Linear(hidden_size, num_classes)
+        if dr_rate:
+            self.dropout = nn.Dropout(p=dr_rate)
+
+    def gen_attention_mask(self, token_ids, valid_length):
+        attention_mask = torch.zeros_like(token_ids)
+        for i, v in enumerate(valid_length):
+            attention_mask[i][:v] = 1
+        return attention_mask.float()
+
+    def forward(self, token_ids, valid_length, segment_ids):
+        attention_mask = self.gen_attention_mask(token_ids, valid_length)
+
+        _, pooler = self.bert(input_ids=token_ids, token_type_ids=segment_ids.long(),
+                              attention_mask=attention_mask.float().to(token_ids.device), return_dict=False)
+        if self.dr_rate:
+            out = self.dropout(pooler)
+        return self.classifier(out)
+
+
+class BERTDataset(Dataset):
+    def __init__(self, dataset, sent_idx, label_idx, bert_tokenizer, vocab, max_len,
+                 pad, pair):
+        transform = BERTSentenceTransform(bert_tokenizer, max_seq_length=max_len, vocab=vocab, pad=pad, pair=pair)
+
+        self.sentences = [transform([i[sent_idx]]) for i in dataset]
+        self.labels = [np.int32(i[label_idx]) for i in dataset]
+
+    def __getitem__(self, i):
+        return (self.sentences[i] + (self.labels[i],))
+
+    def __len__(self):
+        return (len(self.labels))
+
+
+emotion_keyword_map = {
+    0: "불안이",
+    1: "당황이",
+    2: "분노가",
+    3: "슬픔이",
+    4: "중립이",
+    5: "행복이",
+    6: "혐오가"
+}
+
+# 저장한 모델 불러오기
+loaded_model = BERTClassifier(bertmodel, dr_rate=0.5).to(device)
+checkpoint_path = './saved_model.pth'  # 모델 체크포인트 파일 경로
+state_dict = torch.load(checkpoint_path, map_location=device)
+loaded_model.load_state_dict(state_dict, strict=False)
+loaded_model.eval()
+
+# 하이퍼 파라미터 설정
 max_len = 64
-batch_size = 64
-warmup_ratio = 0.1
-num_epochs = 10
-max_grad_norm = 1
-log_interval = 200
-learning_rate = 5e-5
-
-model_path = 'saved_model.pt'
-model = torch.load(model_path)
 
 
-def predict(predict_sentence):
-    data = [predict_sentence, '0']
-    dataset_another = [data]
+def predict_emotion(input_sentence: str):
+    # 입력 문장을 BERT 모델의 입력 형식으로 변환
+    transform = BERTSentenceTransform(tokenizer, max_seq_length=max_len, vocab=vocab, pad=True, pair=False)
+    input_data = transform([input_sentence])
 
-    another_test = BERTDataset(dataset_another, 0, 1, tok, max_len, True, False)
-    test_dataloader = torch.utils.data.DataLoader(another_test, batch_size=batch_size, num_workers=5)
+    # 토큰 ID, 유효 길이, 토큰 타입 ID를 추출
+    input_token_ids, input_valid_length, input_segment_ids = input_data
 
-    model.eval()
+    # 텐서로 변환
+    input_token_ids = torch.tensor([input_token_ids], dtype=torch.long).to(device)
+    input_valid_length = torch.tensor(input_valid_length, dtype=torch.long).to(device)  # 스칼라 값으로 전달
+    input_segment_ids = torch.tensor([input_segment_ids], dtype=torch.long).to(device)
+
+    # 예측 수행
     with torch.no_grad():
+        input_valid_length = torch.tensor([input_valid_length], dtype=torch.long).to(device)  # 스칼라 값으로 전달
+        output = loaded_model(input_token_ids, input_valid_length, input_segment_ids)
+        predicted_situation_label = torch.argmax(output, dim=1).item()
 
-        for batch_id, (token_ids, valid_length, segment_ids, label) in enumerate(test_dataloader):
-            token_ids = token_ids.long().to(device)
-            segment_ids = segment_ids.long().to(device)
+    predicted_emotion = emotion_keyword_map.get(predicted_situation_label, "알 수 없는 감정")
 
-            valid_length = valid_length
-            label = label.long().to(device)
-
-            out = model(token_ids, valid_length, segment_ids)
-
-            test_eval = []
-            for i in out:
-                logits = i
-                logits = logits.detach().cpu().numpy()
-
-                if np.argmax(logits) == 0:
-                    test_eval.append("불안이")
-                elif np.argmax(logits) == 1:
-                    test_eval.append("당황이")
-                elif np.argmax(logits) == 2:
-                    test_eval.append("분노가")
-                elif np.argmax(logits) == 3:
-                    test_eval.append("슬픔이")
-                elif np.argmax(logits) == 4:
-                    test_eval.append("중립이")
-                elif np.argmax(logits) == 5:
-                    test_eval.append("행복이")
-                elif np.argmax(logits) == 6:
-                    test_eval.append("혐오가")
-
-            print(">> 입력하신 내용에서 " + test_eval[0] + " 느껴집니다.")
-
-
-# 질문 무한반복하기! 0 입력시 종료
-end = 1
-while end == 1:
-    sentence = input("하고싶은 말을 입력해주세요 : ")
-    if sentence == "0":
-        break
-    predict(sentence)
-    print("\n")
+    return predicted_emotion

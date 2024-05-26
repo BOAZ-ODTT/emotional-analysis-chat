@@ -1,18 +1,17 @@
-from starlette.websockets import WebSocket
-
+from user_connection import UserConnection
 from message import Message
 
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: list[WebSocket] = []
+        self.active_connections: list[UserConnection] = []
 
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
+    async def connect(self, connection: UserConnection):
+        await connection.accept()
+        self.active_connections.append(connection)
 
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+    def disconnect(self, connection: UserConnection):
+        self.active_connections.remove(connection)
 
     async def broadcast(self, message: Message):
         for connection in self.active_connections:
@@ -22,4 +21,5 @@ class ConnectionManager:
         for connection in self.active_connections:
             await connection.send_text(message)
 
-
+    def get_connections(self):
+        return self.active_connections
