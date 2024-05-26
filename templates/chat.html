@@ -260,13 +260,6 @@
         timestampElement.classList.add('mt-2', 'text-xs');
         messageLayout.appendChild(timestampElement);
         messageElement.appendChild(messageLayout);
-        const senderIcon = document.createElement('span');
-        senderIcon.classList.add('relative', 'flex', 'h-10', 'w-10', 'overflow-hidden', 'rounded-full', 'shrink-0');
-        const senderInitials = document.createElement('span');
-        senderInitials.classList.add('flex', 'h-full', 'w-full', 'items-center', 'justify-center', 'rounded-full', 'bg-muted');
-        senderInitials.textContent = 'CN'; // 여기에 보낸 사람의 이니셜을 넣으십시오.
-        senderIcon.appendChild(senderInitials);
-        messageElement.appendChild(senderIcon);
         return messageElement;
     }
 
