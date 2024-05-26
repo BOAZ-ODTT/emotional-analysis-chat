@@ -18,7 +18,11 @@ templates = Jinja2Templates(directory="templates")
 connection_manager = ConnectionManager()
 
 
-# 입장 버튼 누른 이후
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
+
 @app.websocket("/chat/connect")
 async def websocket_endpoint(
         websocket: WebSocket,
