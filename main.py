@@ -10,8 +10,8 @@ from starlette.templating import Jinja2Templates
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from connection_manager import ConnectionManager
+from emotion_classifier import EmotionClassifier
 from message import Message
-from mock_emotion_classifier import MockEmotionClassifier
 from user_connection import UserConnection
 
 app = FastAPI()
@@ -20,9 +20,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 connection_manager = ConnectionManager()
 
-# emotion_classifier = EmotionClassifier()
+emotion_classifier = EmotionClassifier()
+
+
 # m1 import 이슈로 작업할 때는 MockEmotionClassifier 사용
-emotion_classifier = MockEmotionClassifier()
+# main에 merge 되지 않도록 주의해주세요!
+# emotion_classifier = MockEmotionClassifier()
 
 
 class ChatRoom:
