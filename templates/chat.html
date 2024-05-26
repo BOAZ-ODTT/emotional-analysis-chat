@@ -291,11 +291,11 @@
         return messageDiv;
     }
 
-    function addMessage(messageContent, timestamp, isSystem) {
+    function addMessage(name, messageContent, timestamp) {
         const messagesContainer = document.getElementById('chatspace');
         let messageElement;
-        if (isSystem)
-            messageElement = createOtherElement("System", messageContent, timestamp)
+        if (name === "System" || userName !== name)
+            messageElement = createOtherElement(name, messageContent, timestamp)
         else
             messageElement = createMessageElement(messageContent, timestamp);
         messagesContainer.appendChild(messageElement);
@@ -341,7 +341,7 @@
 
         ws.onmessage = function (event) {
             const message = JSON.parse(event.data);
-            addMessage(message.message, new Date().toLocaleTimeString(), message.username === 'System');
+            addMessage(message.username, message.message, new Date().toLocaleTimeString());
         };
 
         ws.onclose = function () {
@@ -376,7 +376,7 @@
 
         ws.onmessage = function (event) {
             const message = JSON.parse(event.data);
-            addMessage(message.message, new Date().toLocaleTimeString(), message.username === 'System');
+            addMessage(message.username, message.message, new Date().toLocaleTimeString());
         };
 
         ws.onclose = function () {
