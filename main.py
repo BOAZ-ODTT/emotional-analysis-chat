@@ -19,9 +19,9 @@ templates = Jinja2Templates(directory="templates")
 
 connection_manager = ConnectionManager()
 
-# emotion_classifier = EmotionClassifier()
+emotion_classifier = EmotionClassifier()
 # m1 import 이슈로 작업할 때는 MockEmotionClassifier 사용
-emotion_classifier = MockEmotionClassifier()
+# emotion_classifier = MockEmotionClassifier()
 
 
 class ChatRoom:
