@@ -367,6 +367,7 @@
 
     createRoomButton.addEventListener('click', function () {
         const username = document.getElementById('onboardingUsernameInput').value;
+        usernameInput.value = username;
 
         if (!username) {
             alert('사용자 이름을 입력해주세요.');
@@ -402,6 +403,8 @@
     joinRoomButton.addEventListener('click', async function () {
         onboardingContainer.classList.add('hidden');
         roomListContainer.classList.remove('hidden');
+
+        usernameInput.value = document.getElementById('onboardingUsernameInput').value;
 
         const rooms = await fetchRoomList();
         showRoomList(rooms);
