@@ -142,9 +142,13 @@ async def broadcast_emotion_message():
                         message="메시지를 입력해보세요!"
                     )
                     continue
-                last_message = messages[-1].message
 
-                emotion_text = emotion_classifier.classify(last_message)
+                # 임의로 최근 20개 메시지를 활용
+                # 안정성을 위해 글자수 제한이 필요해보이지만 지금은 위험도가 낮은 걸로 판단되어 제한하지 않음
+                target_messages = messages[-20]
+                combined_message = "\n".join([message.message for message in target_messages])
+
+                emotion_text = emotion_classifier.classify(combined_message)
 
                 await manager.broadcast_system_message(
                     message=f"{chose_connection.username}의 {emotion_text} 느껴집니다."
