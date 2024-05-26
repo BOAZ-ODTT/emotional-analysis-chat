@@ -7,10 +7,10 @@ from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from user_connection import UserConnection
 from connection_manager import ConnectionManager
 from inference import predict_emotion
 from message import Message
+from user_connection import UserConnection
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -55,25 +55,37 @@ async def root(request: Request):
 
 async def broadcast_emotion_message():
     while True:
-        await asyncio.sleep(20)
+        try:
+            await asyncio.sleep(20)
 
-        connections = connection_manager.get_connections()
-        if not connections:
-            continue
+            connections = connection_manager.get_connections()
+            if not connections:
+                continue
 
-        chose_connection: UserConnection = random.choice(connections)
+            chose_connection: UserConnection = random.choice(connections)
 
-        messages = chose_connection.get_messages()
-        last_message = messages[-1].message
+            messages = chose_connection.get_messages()
+            if len(messages) == 0:
+                await connection_manager.broadcast(
+                    Message(
+                        username="System",
+                        message=f"메시지를 입력해보세요!",
+                    )
+                )
+                continue
+            last_message = messages[-1].message
 
-        emotion_text = predict_emotion(last_message)
+            emotion_text = predict_emotion(last_message)
 
-        await connection_manager.broadcast(
-            Message(
-                username="System",
-                message=f"{chose_connection.username}의 {emotion_text} 느껴집니다.",
+            await connection_manager.broadcast(
+                Message(
+                    username="System",
+                    message=f"{chose_connection.username}의 {emotion_text} 느껴집니다.",
+                )
             )
-        )
+
+        except Exception as e:
+            print(e)
 
 
 @app.on_event("startup")
