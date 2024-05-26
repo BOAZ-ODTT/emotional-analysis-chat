@@ -223,7 +223,7 @@
     const usernameInput = document.getElementById('usernameInput');
     const messages = document.getElementById('messages');
 
-    let userName = `익명#${(Math.random()).toString().substring(2, 6)}`;
+    let userName = `익명${(Math.random()).toString().substring(2, 6)}`;
     let ws = null;
 
     onboardingUsernameInput.value = userName;
@@ -323,6 +323,7 @@
 
     async function joinRoom(roomId) {
         const username = document.getElementById('onboardingUsernameInput').value;
+        usernameInput.value = username;
 
         if (!username) {
             alert('사용자 이름을 입력해주세요.');
@@ -333,7 +334,7 @@
         roomListContainer.classList.add('hidden');
         chatContainer.classList.remove('hidden');
 
-        ws = new WebSocket(`ws://localhost:8000/chat/${roomId}/connect`);
+        ws = new WebSocket(`ws://localhost:8000/chat/${roomId}/connect/${username}`);
 
         ws.onopen = function () {
             console.log("Connected to WebSocket server");
@@ -368,7 +369,7 @@
         onboardingContainer.classList.add('hidden');
         chatContainer.classList.remove('hidden');
 
-        ws = new WebSocket('ws://localhost:8000/chat/connect/new');
+        ws = new WebSocket(`ws://localhost:8000/chat/connect/new/${username}`);
 
         ws.onopen = function () {
             console.log("Connected to WebSocket server");

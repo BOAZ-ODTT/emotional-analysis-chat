@@ -47,8 +47,8 @@ class ChatRoom:
 chat_rooms: Dict[str, ChatRoom] = {}
 
 
-@app.websocket("/chat/connect/new")
-async def create_new_chat_room(websocket: WebSocket):
+@app.websocket("/chat/connect/new/{username}")
+async def create_new_chat_room(websocket: WebSocket, username: str):
     room_id = str(uuid.uuid4())  # 무작위로 UUID 생성
     chat_rooms[room_id] = ChatRoom(room_id)
 
@@ -57,8 +57,7 @@ async def create_new_chat_room(websocket: WebSocket):
     connection = UserConnection(
         user_id=str(uuid.uuid4()),
         websocket=websocket,
-        # TODO: 유저 이름 추가
-        username="유저이름 추가해주세요!",
+        username=username,
     )
 
     await chat_rooms[room_id].connect(connection)
@@ -81,13 +80,12 @@ async def create_new_chat_room(websocket: WebSocket):
             await chat_rooms[room_id].broadcast(Message(username="System", message="누군가 방에서 나갔습니다."))
 
 
-@app.websocket("/chat/{room_id}/connect")
-async def websocket_endpoint(websocket: WebSocket, room_id: str):
+@app.websocket("/chat/{room_id}/connect/{username}")
+async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
     connection = UserConnection(
         user_id=str(uuid.uuid4()),
         websocket=websocket,
-        # TODO: 유저 이름 추가
-        username="유저이름 추가해주세요!",
+        username=username,
     )
 
     await chat_rooms[room_id].connect(connection)
