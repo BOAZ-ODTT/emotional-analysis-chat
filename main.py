@@ -5,17 +5,18 @@ from typing import Set, Dict
 
 from fastapi import FastAPI, Request
 from starlette.responses import HTMLResponse
+from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from connection_manager import ConnectionManager
-from emotion_classifier import EmotionClassifier
 from message import Message
 from mock_emotion_classifier import MockEmotionClassifier
 from user_connection import UserConnection
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 connection_manager = ConnectionManager()
 
@@ -29,20 +30,21 @@ class ChatRoom:
         self.room_id = room_id
         self.room_name = f"room {uuid.UUID(room_id).int % 10000}"
         self.manager = ConnectionManager()
-        self.users: Set[UserConnection] = set()  # 사용자 수 추적
 
     async def connect(self, connection: UserConnection):
         await self.manager.connect(connection)
-        self.users.add(connection)  # 사용자 추가
 
     async def disconnect(self, connection: UserConnection):
         self.manager.disconnect(connection)
-        self.users.remove(connection)  # 사용자 제거
-        if not self.users:
+
+        if self.manager.count_connections() == 0:
             del chat_rooms[self.room_id]  # 사용자가 모두 나가면 방 삭제
 
     async def broadcast(self, message: Message):
         await self.manager.broadcast(message)
+
+    async def broadcast_system_message(self, message: str):
+        await self.manager.broadcast_system_message(message)
 
 
 chat_rooms: Dict[str, ChatRoom] = {}
@@ -52,8 +54,6 @@ chat_rooms: Dict[str, ChatRoom] = {}
 async def create_new_chat_room(websocket: WebSocket, username: str):
     room_id = str(uuid.uuid4())  # 무작위로 UUID 생성
     chat_rooms[room_id] = ChatRoom(room_id)
-
-    print(chat_rooms)
 
     connection = UserConnection(
         user_id=str(uuid.uuid4()),
@@ -69,9 +69,9 @@ async def create_new_chat_room(websocket: WebSocket, username: str):
             username='Root', message=chat_rooms[room_id].room_name
         ))
 
-        await chat_rooms[room_id].broadcast(Message(
-            username='System', message=f'{username}가 방에 입장했습니다.'
-        ))
+        await chat_rooms[room_id].broadcast_system_message(
+            message=f'{username}가 방에 입장했습니다.'
+        )
 
         while True:
             data = await websocket.receive_text()
@@ -83,7 +83,9 @@ async def create_new_chat_room(websocket: WebSocket, username: str):
     except WebSocketDisconnect:
         await chat_rooms[room_id].disconnect(connection)
         if room_id in chat_rooms:
-            await chat_rooms[room_id].broadcast(Message(username="System", message=f"{username}가 방에서 나갔습니다."))
+            await chat_rooms[room_id].broadcast_system_message(
+                message=f"{username}가 방에서 나갔습니다."
+            )
 
 
 @app.websocket("/chat/{room_id}/connect/{username}")
@@ -102,9 +104,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
             username='Root', message=chat_rooms[room_id].room_name
         ))
 
-        await chat_rooms[room_id].broadcast(Message(
-            username='System', message=f'{username}가 방에 입장했습니다.'
-        ))
+        await chat_rooms[room_id].broadcast_system_message(message=f'{username}가 방에 입장했습니다.')
 
         while True:
             data = await websocket.receive_text()
@@ -154,22 +154,16 @@ async def broadcast_emotion_message():
 
                 messages = chose_connection.get_messages()
                 if len(messages) == 0:
-                    await manager.broadcast(
-                        Message(
-                            username="System",
-                            message=f"메시지를 입력해보세요!",
-                        )
+                    await manager.broadcast_system_message(
+                        message="메시지를 입력해보세요!"
                     )
                     continue
                 last_message = messages[-1].message
 
                 emotion_text = emotion_classifier.classify(last_message)
 
-                await manager.broadcast(
-                    Message(
-                        username="System",
-                        message=f"{chose_connection.username}의 {emotion_text} 느껴집니다.",
-                    )
+                await manager.broadcast_system_message(
+                    message=f"{chose_connection.username}의 {emotion_text} 느껴집니다."
                 )
 
         except Exception as e:

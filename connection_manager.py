@@ -1,5 +1,5 @@
+from message import Message, MessageType
 from user_connection import UserConnection
-from message import Message
 
 
 class ConnectionManager:
@@ -13,13 +13,22 @@ class ConnectionManager:
     def disconnect(self, connection: UserConnection):
         self.active_connections.remove(connection)
 
+    async def broadcast_system_message(self, message: str):
+        system_message = Message(
+            username="System",
+            message=message,
+            message_type=MessageType.SYSTEM_MESSAGE,
+        )
+
+        for connection in self.active_connections:
+            await connection.send_text(system_message.json())
+
     async def broadcast(self, message: Message):
         for connection in self.active_connections:
             await connection.send_text(message.json())
 
-    async def broadcast_system_message(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
     def get_connections(self):
         return self.active_connections
+
+    def count_connections(self):
+        return len(self.active_connections)
