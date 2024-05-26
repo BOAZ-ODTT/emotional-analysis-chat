@@ -69,44 +69,6 @@ async def create_chat_room():
     return {"room_id": new_room_id, "room_name": chat_rooms[new_room_id].room_name}
 
 
-@app.websocket("/chat/connect/new/{username}")
-async def create_new_chat_room(websocket: WebSocket, username: str):
-    room_id = str(uuid.uuid4())  # 무작위로 UUID 생성
-    chat_rooms[room_id] = ChatRoom(room_id)
-
-    connection = UserConnection(
-        user_id=str(uuid.uuid4()),
-        websocket=websocket,
-        username=username,
-    )
-
-    await chat_rooms[room_id].connect(connection)
-
-    try:
-        # 클라이언트에게 매개변수를 포함한 초기 메시지 전송
-        await chat_rooms[room_id].broadcast(Message(
-            username='Root', message=chat_rooms[room_id].room_name
-        ))
-
-        await chat_rooms[room_id].broadcast_system_message(
-            message=f'{username}가 방에 입장했습니다.'
-        )
-
-        while True:
-            data = await websocket.receive_text()
-            message = Message.parse_raw(data)
-
-            await chat_rooms[room_id].broadcast(message)
-            connection.add_message(message)
-
-    except WebSocketDisconnect:
-        await chat_rooms[room_id].disconnect(connection)
-        if room_id in chat_rooms:
-            await chat_rooms[room_id].broadcast_system_message(
-                message=f"{username}가 방에서 나갔습니다."
-            )
-
-
 @app.websocket("/chat/{room_id}/connect/{username}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
     connection = UserConnection(
