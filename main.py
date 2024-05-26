@@ -27,6 +27,7 @@ emotion_classifier = MockEmotionClassifier()
 class ChatRoom:
     def __init__(self, room_id):
         self.room_id = room_id
+        self.room_name = f"room {uuid.UUID(room_id).int % 10000}"
         self.manager = ConnectionManager()
         self.users: Set[UserConnection] = set()  # 사용자 수 추적
 
@@ -110,7 +111,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
 
 @app.get("/chat/rooms")
 async def get_rooms():
-    return list(chat_rooms.keys())
+    return [value.room_name for value in chat_rooms.values()]
 
 
 # root
