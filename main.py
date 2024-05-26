@@ -19,9 +19,9 @@ templates = Jinja2Templates(directory="templates")
 
 connection_manager = ConnectionManager()
 
-emotion_classifier = EmotionClassifier()
+# emotion_classifier = EmotionClassifier()
 # m1 import 이슈로 작업할 때는 MockEmotionClassifier 사용
-# emotion_classifier = MockEmotionClassifier()
+emotion_classifier = MockEmotionClassifier()
 
 
 class ChatRoom:
@@ -35,7 +35,7 @@ class ChatRoom:
         self.users.add(connection)  # 사용자 추가
 
     async def disconnect(self, connection: UserConnection):
-        await self.manager.disconnect(connection)
+        self.manager.disconnect(connection)
         self.users.remove(connection)  # 사용자 제거
         if not self.users:
             del chat_rooms[self.room_id]  # 사용자가 모두 나가면 방 삭제
@@ -108,35 +108,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
         await chat_rooms[room_id].disconnect(connection)
         if room_id in chat_rooms:
             await chat_rooms[room_id].broadcast(Message(username="System", message="누군가 방에서 나갔습니다."))
-
-
-@app.websocket("/chat/connect")
-async def websocket_endpoint(
-        websocket: WebSocket,
-        username: str | None = None,
-):
-    connection = UserConnection(
-        user_id=str(uuid.uuid4()),
-        username=username,
-        websocket=websocket,
-    )
-    await connection_manager.connect(connection)
-
-    try:
-        await connection_manager.broadcast(Message(
-            username='System', message='누군가 방에 입장했습니다.'
-        ))
-
-        while True:
-            data = await websocket.receive_text()
-            message = Message.parse_raw(data)
-
-            await connection_manager.broadcast(message)
-            connection.add_message(message)
-
-    except WebSocketDisconnect:
-        connection_manager.disconnect(connection)
-        await connection_manager.broadcast(Message(username="System", message="누군가 방에서 나갔습니다."))
 
 
 @app.get("/chat/rooms")
