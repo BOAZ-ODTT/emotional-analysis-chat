@@ -1,7 +1,7 @@
 import asyncio
 import random
 import uuid
-from typing import Set, Dict
+from typing import Dict
 
 from fastapi import FastAPI, Request
 from starlette.responses import HTMLResponse
@@ -46,8 +46,27 @@ class ChatRoom:
     async def broadcast_system_message(self, message: str):
         await self.manager.broadcast_system_message(message)
 
+    def count_connections(self):
+        return self.manager.count_connections()
+
 
 chat_rooms: Dict[str, ChatRoom] = {}
+
+
+@app.post("/chat/rooms/new")
+async def create_chat_room():
+    new_room_id = str(uuid.uuid4())
+    chat_rooms[new_room_id] = ChatRoom(new_room_id)
+
+    # 채팅방 클렌징을 위해 일정 시간동안 입장한 사람이 없다면 채팅방 제거
+    async def check_and_clear_inactive_room(room_id):
+        await asyncio.sleep(10)
+        if room_id in chat_rooms and chat_rooms[room_id].count_connections() == 0:
+            del chat_rooms[room_id]
+
+    asyncio.create_task(check_and_clear_inactive_room(new_room_id))
+
+    return {"room_id": new_room_id, "room_name": chat_rooms[new_room_id].room_name}
 
 
 @app.websocket("/chat/connect/new/{username}")
