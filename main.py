@@ -77,9 +77,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
         username=username,
     )
 
-    await chat_rooms[room_id].connect(connection)
-
     try:
+        await chat_rooms[room_id].connect(connection)
         # 클라이언트에게 매개변수를 포함한 초기 메시지 전송
         await chat_rooms[room_id].broadcast(Message(
             username='Root', message=chat_rooms[room_id].room_name
@@ -102,7 +101,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
 
 @app.get("/chat/rooms")
 async def get_rooms():
-    return [value.room_name for value in chat_rooms.values()]
+    # TODO: 임시로 room_id를 사용합니다. 추후 ChatRoom response를 추가하고 개선합니다.
+    return [value.room_id for value in chat_rooms.values()]
 
 
 # root
