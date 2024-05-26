@@ -287,7 +287,7 @@
 		setUserName(username);
 	}
 
-	createRoomButton.addEventListener('click', function () {
+	createRoomButton.addEventListener('click', async function () {
 		const username = document.getElementById('onboardingUsernameInput').value;
 		usernameInput.value = username;
 
@@ -295,35 +295,22 @@
 			alert('사용자 이름을 입력해주세요.');
 			return;
 		}
+		setUserName(username);
 
 		onboardingContainer.classList.add('hidden');
 		chatContainer.classList.remove('hidden');
 
-		ws = new WebSocket(`${socketEndpoint}/chat/connect/new/${username}`);
+		const response = await fetch(`${apiEndpoint}/chat/rooms/new`, {
+			method: 'POST',
+		})
 
-		ws.onopen = function () {
-			console.log("Connected to WebSocket server");
-		};
+		if (response.status >= 400) {
+			alert('채팅방 생성에 실패했습니다.')
+			return
+		}
 
-		ws.onmessage = function (event) {
-			const message = JSON.parse(event.data);
-			if (message.username === "Root") {
-				roomName.innerText = message.message
-			} else {
-				addMessage(message.username, message.message, new Date().toLocaleTimeString());
-			}
-		};
-
-		ws.onclose = function () {
-			console.log("WebSocket connection closed");
-			ws = null;
-		};
-
-		ws.onerror = function (error) {
-			console.error("WebSocket error:", error);
-		};
-
-		setUserName(username);
+		const {room_id} = await response.json()
+		await joinRoom(room_id)
 	});
 
 	joinRoomButton.addEventListener('click', async function () {
