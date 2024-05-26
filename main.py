@@ -64,7 +64,7 @@ async def create_new_chat_room(websocket: WebSocket, username: str):
 
     try:
         await chat_rooms[room_id].broadcast(Message(
-            username='System', message='누군가 방에 입장했습니다.'
+            username='System', message=f'{username}가 방에 입장했습니다.'
         ))
 
         while True:
@@ -77,7 +77,7 @@ async def create_new_chat_room(websocket: WebSocket, username: str):
     except WebSocketDisconnect:
         await chat_rooms[room_id].disconnect(connection)
         if room_id in chat_rooms:
-            await chat_rooms[room_id].broadcast(Message(username="System", message="누군가 방에서 나갔습니다."))
+            await chat_rooms[room_id].broadcast(Message(username="System", message=f"{username}가 방에서 나갔습니다."))
 
 
 @app.websocket("/chat/{room_id}/connect/{username}")
@@ -92,7 +92,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
 
     try:
         await chat_rooms[room_id].broadcast(Message(
-            username='System', message='누군가 방에 입장했습니다.'
+            username='System', message=f'{username}가 방에 입장했습니다.'
         ))
 
         while True:
@@ -105,7 +105,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
     except WebSocketDisconnect:
         await chat_rooms[room_id].disconnect(connection)
         if room_id in chat_rooms:
-            await chat_rooms[room_id].broadcast(Message(username="System", message="누군가 방에서 나갔습니다."))
+            await chat_rooms[room_id].broadcast(Message(username="System", message=f"{username}가 방에서 나갔습니다."))
 
 
 @app.get("/chat/rooms")
