@@ -53,7 +53,7 @@
         <line x1="8" x2="8" y1="2" y2="4"></line>
         <line x1="16" x2="16" y1="2" y2="4"></line>
       </svg>
-      <h1 class="text-lg font-semibold">Chat Rooms</h1>
+      <h1 id="room-name" class="text-lg font-semibold">Chat Rooms</h1>
     </div>
     <div class="flex items-center gap-2">
       <button class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 rounded-full">
@@ -222,6 +222,7 @@
     const roomList = document.getElementById('roomList');
     const usernameInput = document.getElementById('usernameInput');
     const messages = document.getElementById('messages');
+    const roomName = document.getElementById("room-name");
 
     let userName = `익명${(Math.random()).toString().substring(2, 6)}`;
     let ws = null;
@@ -342,7 +343,12 @@
 
         ws.onmessage = function (event) {
             const message = JSON.parse(event.data);
-            addMessage(message.username, message.message, new Date().toLocaleTimeString());
+            if (message.username === "Root"){
+                roomName.innerText = message.message
+            }
+            else {
+                addMessage(message.username, message.message, new Date().toLocaleTimeString());
+            }
         };
 
         ws.onclose = function () {
@@ -377,7 +383,11 @@
 
         ws.onmessage = function (event) {
             const message = JSON.parse(event.data);
-            addMessage(message.username, message.message, new Date().toLocaleTimeString());
+            if (message.username === "Root") {
+                roomName.innerText = message.message
+            } else {
+                addMessage(message.username, message.message, new Date().toLocaleTimeString());
+            }
         };
 
         ws.onclose = function () {

@@ -64,6 +64,11 @@ async def create_new_chat_room(websocket: WebSocket, username: str):
     await chat_rooms[room_id].connect(connection)
 
     try:
+        # 클라이언트에게 매개변수를 포함한 초기 메시지 전송
+        await chat_rooms[room_id].broadcast(Message(
+            username='Root', message=chat_rooms[room_id].room_name
+        ))
+
         await chat_rooms[room_id].broadcast(Message(
             username='System', message=f'{username}가 방에 입장했습니다.'
         ))
@@ -92,6 +97,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
     await chat_rooms[room_id].connect(connection)
 
     try:
+        # 클라이언트에게 매개변수를 포함한 초기 메시지 전송
+        await chat_rooms[room_id].broadcast(Message(
+            username='Root', message=chat_rooms[room_id].room_name
+        ))
+
         await chat_rooms[room_id].broadcast(Message(
             username='System', message=f'{username}가 방에 입장했습니다.'
         ))
