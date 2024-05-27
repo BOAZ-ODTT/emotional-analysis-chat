@@ -1,4 +1,4 @@
-from emotion_classifier import EmotionClassifier
+from emotion_analysis.emotion_classifier import EmotionClassifier
 
 
 class MockEmotionClassifier(EmotionClassifier):

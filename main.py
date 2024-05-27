@@ -9,10 +9,11 @@ from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from connection_manager import ConnectionManager
-from emotion_classifier import EmotionClassifier
-from message import Message
-from user_connection import UserConnection
+from chat.connection_manager import ConnectionManager
+from chat.message import Message
+from chat.user_connection import UserConnection
+from dto.chat_room_response import ChatRoomResponse, ListChatRoomsResponse
+from emotion_analysis.mock_emotion_classifier import MockEmotionClassifier
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -20,14 +21,15 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 connection_manager = ConnectionManager()
 
-emotion_classifier = EmotionClassifier()
+# emotion_classifier = EmotionClassifier()
 
 
 # m1 import 이슈로 작업할 때는 MockEmotionClassifier 사용
 # main에 merge 되지 않도록 주의해주세요!
-# emotion_classifier = MockEmotionClassifier()
+emotion_classifier = MockEmotionClassifier()
 
 
+# TODO: ChatRoomRepository 또는 ChatRoomManager를 만들어서 관리하도록
 class ChatRoom:
     def __init__(self, room_id):
         self.room_id = room_id
@@ -69,7 +71,11 @@ async def create_chat_room():
 
     asyncio.create_task(check_and_clear_inactive_room(new_room_id))
 
-    return {"room_id": new_room_id, "room_name": chat_rooms[new_room_id].room_name}
+    return ChatRoomResponse(
+        room_id=new_room_id,
+        room_name=chat_rooms[new_room_id].room_name,
+        connection_count=0,
+    )
 
 
 @app.websocket("/chat/{room_id}/connect/{username}")
@@ -104,8 +110,15 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
 
 @app.get("/chat/rooms")
 async def get_rooms():
-    # TODO: 임시로 room_id를 사용합니다. 추후 ChatRoom response를 추가하고 개선합니다.
-    return [value.room_id for value in chat_rooms.values()]
+    return ListChatRoomsResponse(
+        chat_rooms=[
+            ChatRoomResponse(
+                room_id=key,
+                room_name=value.room_name,
+                connection_count=value.count_connections(),
+            ) for key, value in chat_rooms.items()
+        ]
+    )
 
 
 # root
