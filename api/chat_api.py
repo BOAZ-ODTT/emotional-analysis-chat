@@ -32,7 +32,7 @@ async def create_chat_room():
 
 
 @router.get("/rooms")
-async def get_rooms():
+async def list_rooms():
     return ListChatRoomsResponse(
         chat_rooms=[
             ChatRoomResponse(
