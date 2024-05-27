@@ -135,7 +135,6 @@
 </div>
 <script src="{{ url_for('static', path='js/api.js') }}"></script>
 <script>
-
 	const onboardingUsernameInput = document.getElementById('onboardingUsernameInput');
 	const createRoomButton = document.getElementById('createRoomButton');
 	const joinRoomButton = document.getElementById('joinRoomButton');
@@ -172,57 +171,51 @@
 		}
 	}
 
-	function createMessageElement(messageContent, timestamp) {
+	function createMessageElement(name, message, sentAt, isOwnMessage = true) {
 		const messageElement = document.createElement('div');
-		messageElement.classList.add('flex', 'items-start', 'gap-3', 'justify-end', 'mt-5', 'mb-5');
-		const messageLayout = document.createElement('div');
-		messageLayout.classList.add('rounded-lg', 'bg-blue-500', 'p-3', 'text-white', 'shadow-sm');
+		const messageContainer = document.createElement('div');
 		const messageContentElement = document.createElement('div');
-		messageContentElement.textContent = messageContent;
-		messageLayout.appendChild(messageContentElement);
 		const timestampElement = document.createElement('div');
-		timestampElement.textContent = timestamp;
+
+		messageElement.classList.add('flex', 'items-start', 'gap-3', 'mt-5', 'mb-5');
+		messageContainer.classList.add('rounded-lg', 'p-3', 'shadow-sm');
+
+		messageContentElement.textContent = message;
+		timestampElement.textContent = sentAt;
 		timestampElement.classList.add('mt-2', 'text-xs');
-		messageLayout.appendChild(timestampElement);
-		messageElement.appendChild(messageLayout);
+
+		if (isOwnMessage) {
+			messageElement.classList.add('justify-end');
+			messageContainer.classList.add('bg-blue-500', 'text-white');
+		} else {
+			messageContainer.classList.add('bg-white');
+
+			if (name) {
+				const nameElement = document.createElement('div');
+				nameElement.classList.add('font-medium');
+				nameElement.textContent = name;
+				messageContainer.appendChild(nameElement);
+			}
+
+			messageContentElement.classList.add('text-sm', 'text-gray-500');
+			timestampElement.classList.add('text-gray-500');
+		}
+
+		messageContainer.appendChild(messageContentElement);
+		messageContainer.appendChild(timestampElement);
+		messageElement.appendChild(messageContainer);
+
 		return messageElement;
 	}
 
-	function createOtherElement(name, message, timestamp) {
-		const messageDiv = document.createElement('div');
-		messageDiv.classList.add('flex', 'items-start', 'gap-3', 'mt-5', 'mb-5');
-		const profileImageSpan = document.createElement('span');
-		profileImageSpan.classList.add('relative', 'flex', 'h-10', 'w-10', 'overflow-hidden', 'rounded-full', 'shrink-0');
-		const profileImage = document.createElement('span');
-		profileImage.classList.add('flex', 'h-full', 'w-full', 'items-center', 'justify-center', 'rounded-full', 'bg-muted');
-		profileImage.textContent = name.charAt(0); // 이름의 첫 글자를 프로필 이미지로 사용
-		profileImageSpan.appendChild(profileImage);
-		const messageContentDiv = document.createElement('div');
-		messageContentDiv.classList.add('rounded-lg', 'bg-white', 'p-3', 'shadow-sm');
-		const nameDiv = document.createElement('div');
-		nameDiv.classList.add('font-medium');
-		nameDiv.textContent = name;
-		const messageDivInner = document.createElement('div');
-		messageDivInner.classList.add('text-sm', 'text-gray-500');
-		messageDivInner.textContent = message;
-		const timestampDiv = document.createElement('div');
-		timestampDiv.classList.add('mt-2', 'text-xs', 'text-gray-500');
-		timestampDiv.textContent = timestamp;
-		messageContentDiv.appendChild(nameDiv);
-		messageContentDiv.appendChild(messageDivInner);
-		messageContentDiv.appendChild(timestampDiv);
-		messageDiv.appendChild(profileImageSpan);
-		messageDiv.appendChild(messageContentDiv);
-		return messageDiv;
-	}
+	function addMessage(message) {
+		const {username, message: messageContent, message_type, sent_at} = message;
+		const set_at_str = new Date(sent_at ?? new Date()).toLocaleTimeString()
 
-	function addMessage(name, messageContent, timestamp) {
 		const messagesContainer = document.getElementById('chatspace');
-		let messageElement;
-		if (name === "System" || userName !== name)
-			messageElement = createOtherElement(name, messageContent, timestamp)
-		else
-			messageElement = createMessageElement(messageContent, timestamp);
+
+		let isOwnMessage = userName === username;
+		const messageElement = createMessageElement(username, messageContent, set_at_str, isOwnMessage)
 		messagesContainer.appendChild(messageElement);
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 	}
@@ -280,7 +273,7 @@
 			if (message.username === "Root") {
 				roomName.innerText = message.message
 			} else {
-				addMessage(message.username, message.message, new Date().toLocaleTimeString());
+				addMessage(message);
 			}
 		};
 
