@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div id="roomListContainer" class="min-h-screen flex justify-center items-center">
+	<div class="max-w-md w-full bg-white p-8 rounded shadow-lg">
+		<div>
+			<h1 class="text-xl font-bold mb-4">사용자 이름</h1>
+		</div>
+		<div>
+			<p id="error" class="text-red-500 mb-1 hidden">사용자 이름을 입력해주세요.</p>
+			<input type="text" id="onboardingUsernameInput" placeholder="사용자 이름"
+			       class="w-full mb-4 p-2 rounded border border-gray-300 focus:outline-none focus:ring focus:border-blue-500">
+		</div>
+		<div>
+			<h3 class="text-xl font-bold mt-4 mb-2">채팅방 목록</h3>
+		</div>
+		<div>
+			<ul id="roomList" class="mb-4"></ul>
+		</div>
+		<button id="createRoomButton" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">새 채팅방 만들기
+		</button>
+	</div>
+</div>
+
+
+<script>
+	const onboardingUsernameInput = document.getElementById('onboardingUsernameInput');
+	const createRoomButton = document.getElementById('createRoomButton');
+	const backButton = document.getElementById('backButton');
+	const onboardingContainer = document.getElementById('onboardingContainer');
+	const chatContainer = document.getElementById('chatContainer');
+	const roomListContainer = document.getElementById('roomListContainer');
+	const roomList = document.getElementById('roomList');
+	const messages = document.getElementById('messages');
+	const roomName = document.getElementById("room-name");
+
+	let username = `익명${(Math.random()).toString().substring(2, 6)}`;
+	let ws = null;
+
+	onboardingUsernameInput.value = username;
+
+	function setUserName(newUserName) {
+		username = newUserName;
+	}
+
+	// document load 되면 채팅방 리스트 조회
+	document.addEventListener('DOMContentLoaded', async function () {
+		const {chat_rooms} = await fetchChatRooms();
+		renderChatRooms(chat_rooms);
+	});
+
+
+	function renderChatRooms(rooms) {
+		roomList.innerHTML = ''; // 기존 목록 초기화
+		rooms.forEach(room => {
+			const roomItemContainer = document.createElement('div');
+			roomItemContainer.classList.add('border-b', 'border-gray-200');
+			const roomItem = document.createElement('div');
+			roomItem.classList.add('p-2', 'hover:bg-gray-200', 'cursor-pointer', 'flex');
+			roomItem.addEventListener('click', function () {
+				joinRoom(room.room_id);
+			});
+
+			const roomName = document.createElement('div');
+			roomName.classList.add('flex-1');
+			roomName.textContent = room.room_name;
+			roomItem.appendChild(roomName);
+
+			const roomUserCount = document.createElement('div');
+			roomUserCount.classList.add('text-gray-500');
+			roomUserCount.textContent = `${room.user_count}명`;
+			roomItem.appendChild(roomUserCount);
+
+			roomItemContainer.appendChild(roomItem);
+
+			roomList.appendChild(roomItemContainer);
+		});
+	}
+
+	function joinRoom(roomId) {
+		location.href = `/rooms/${roomId}?username=${username}`;
+	}
+
+	createRoomButton.addEventListener('click', async function () {
+		if (!username) {
+			alert('사용자 이름을 입력해주세요.');
+			return;
+		}
+
+		const {room_id} = await createChatRoom('임시채팅방')
+		await joinRoom(room_id)
+	});
+
+
+</script>
+{% endblock %}

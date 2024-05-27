@@ -6,6 +6,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from core.dependencies import chat_room_manager
 from dto.chat_room_response import ChatRoomResponse, ListChatRoomsResponse
+from service.chat.chat_room_manager import NotFoundChatRoomException
 from service.chat.user_connection import UserConnection
 
 router = APIRouter(prefix="/v1/chat")
@@ -19,8 +20,14 @@ async def create_chat_room():
     # 채팅방 클렌징을 위해 일정 시간동안 입장한 사람이 없다면 채팅방 제거
     async def check_and_clear_inactive_room(room_id):
         await asyncio.sleep(10)
-        if chat_room_manager.count_user_in_room(room_id=room_id) == 0:
-            chat_room_manager.delete_chat_room(room_id=room_id)
+        try:
+            if chat_room_manager.count_user_in_room(room_id=room_id) == 0:
+                chat_room_manager.delete_chat_room(room_id=room_id)
+        except NotFoundChatRoomException:
+            pass
+        except Exception as e:
+            print(e)
+
 
     asyncio.create_task(check_and_clear_inactive_room(new_room_id))
 

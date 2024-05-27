@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="chatContainer" class="flex h-screen w-full flex-col bg-gray-100 overflow-hidden">
+	<header class="flex h-14 shrink-0 items-center justify-between border-b bg-white px-4">
+		<div class="flex items-center gap-2">
+			<div>
+				이름:
+				<input type="text" id="usernameInput" placeholder="유저 이름"
+				       class="p-2 rounded-l border border-gray-300 " disabled>
+			</div>
+			<h1 id="roomName" class="pl-4 text-lg font-semibold">Chat Rooms</h1>
+		</div>
+	</header>
+	<div class="flex-1">
+		<div class="flex h-full flex-col">
+			<div id="messagesContainer" class="overflow-y-scroll p-4 h-[84vh]">
+				<div class="space-y-4"></div>
+			</div>
+			<div class="flex h-16 shrink-0 items-center border-t bg-white px-4">
+				<input id="messageInput"
+				       class="flex h-10 w-full border border-input ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1 rounded-lg bg-gray-100 px-4 py-2 text-sm focus:bg-white"
+				       placeholder="Type your message..."
+				       type="text"
+				/>
+				<button id="sendButton"
+				        class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 ml-2 rounded-full">
+					<img src="{{ url_for('static', path='/icons/message_send_icon.svg') }}" alt="message_send_icon">
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	const chatContainer = document.getElementById('chatContainer');
+	const usernameInput = document.getElementById('usernameInput');
+	const roomName = document.getElementById("roomName");
+	const messagesContainer = document.getElementById('messagesContainer');
+
+	let username = "{{ username }}";
+	let roomId = "{{ room_id }}";
+
+	let ws = null;
+
+	function setUserName(newUserName) {
+		username = newUserName;
+	}
+
+	document.addEventListener('DOMContentLoaded', async function () {
+		await joinRoom(roomId);
+	});
+
+	function sendMessage() {
+		const input = document.getElementById('messageInput');
+
+		if (input.value) {
+			const message = {
+				username: username,
+				message: input.value
+			};
+
+			let messageJSON = JSON.stringify(message);
+			ws.send(messageJSON);
+			input.value = '';
+		}
+	}
+
+	function createMessageElement(name, message, sentAt, isOwnMessage = true) {
+		const messageElement = document.createElement('div');
+		const messageContainer = document.createElement('div');
+		const messageContentElement = document.createElement('div');
+		const timestampElement = document.createElement('div');
+
+		messageElement.classList.add('flex', 'items-start', 'gap-3', 'mt-5', 'mb-5');
+		messageContainer.classList.add('rounded-lg', 'p-3', 'shadow-sm', 'break-words', 'max-w-full');
+
+		messageContentElement.textContent = message;
+		timestampElement.textContent = sentAt;
+		timestampElement.classList.add('mt-2', 'text-xs');
+
+		if (isOwnMessage) {
+			messageElement.classList.add('justify-end');
+			messageContainer.classList.add('bg-blue-500', 'text-white');
+		} else {
+			messageContainer.classList.add('bg-white');
+
+			if (name) {
+				const nameElement = document.createElement('div');
+				nameElement.classList.add('font-medium');
+				nameElement.textContent = name;
+				messageContainer.appendChild(nameElement);
+			}
+
+			messageContentElement.classList.add('text-sm', 'text-gray-500');
+			timestampElement.classList.add('text-gray-500');
+		}
+
+		messageContainer.appendChild(messageContentElement);
+		messageContainer.appendChild(timestampElement);
+		messageElement.appendChild(messageContainer);
+
+		return messageElement;
+	}
+
+	function addMessage(message) {
+		const {username, message: messageContent, message_type, sent_at} = message;
+		const sent_at_str = new Date(sent_at ?? new Date()).toLocaleTimeString();
+
+
+		let isOwnMessage = username === username;
+		const messageElement = createMessageElement(username, messageContent, sent_at_str, isOwnMessage);
+		messagesContainer.appendChild(messageElement);
+		scrollToBottom();
+	}
+
+	function scrollToBottom() {
+		messagesContainer.scrollTop = messagesContainer.scrollHeight;
+	}
+
+	async function joinRoom(roomId) {
+		ws = await connectChatRoomSocket(roomId, username);
+
+		ws.onopen = function () {
+			console.log("Connected to WebSocket server");
+		};
+
+		ws.onmessage = function (event) {
+			const message = JSON.parse(event.data);
+			if (message.username === "Root") {
+				roomName.innerText = message.message;
+			} else {
+				addMessage(message);
+			}
+		};
+
+		ws.onclose = function () {
+			ws = null;
+			alert("채팅방이 종료되었습니다. 메인화면으로 이동합니다.");
+			location.href = '/';
+		};
+
+		ws.onerror = function (error) {
+			console.error("WebSocket error:", error);
+		};
+
+		setUserName(username);
+	}
+
+	document.getElementById('sendButton').addEventListener('click', sendMessage);
+
+	document.getElementById('messageInput').addEventListener('keypress', function (event) {
+		if (event.key === 'Enter') {
+			sendMessage();
+		}
+	});
+
+	// Automatically scroll to the bottom when a new message is added
+	const observer = new MutationObserver(scrollToBottom);
+	observer.observe(document.getElementById('messagesContainer').querySelector('.space-y-4'), {childList: true});
+</script>
+{% endblock %}
