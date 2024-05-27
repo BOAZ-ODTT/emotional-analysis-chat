@@ -1,8 +1,7 @@
 class EmotionClassifier:
 
     def __init__(self):
-        from inference import predict_emotion
-
+        from service.emotion_analysis.inference import predict_emotion
         self._classifier = predict_emotion
 
     def classify(self, message: str) -> str:
