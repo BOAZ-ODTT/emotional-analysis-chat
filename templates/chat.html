@@ -133,9 +133,8 @@
 		</div>
 	</div>
 </div>
+<script src="{{ url_for('static', path='js/api.js') }}"></script>
 <script>
-	const apiEndpoint = `${window.location.origin}/api/v1`;
-	const socketEndpoint = apiEndpoint.replace('http', 'ws');
 
 	const onboardingUsernameInput = document.getElementById('onboardingUsernameInput');
 	const createRoomButton = document.getElementById('createRoomButton');
@@ -228,10 +227,6 @@
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 	}
 
-	async function fetchChatRooms() {
-		const response = await fetch(`${apiEndpoint}/chat/rooms`);
-		return await response.json();
-	}
 
 	function renderChatRooms(rooms) {
 		roomList.innerHTML = ''; // 기존 목록 초기화
@@ -274,7 +269,7 @@
 		roomListContainer.classList.add('hidden');
 		chatContainer.classList.remove('hidden');
 
-		ws = new WebSocket(`${socketEndpoint}/chat/${roomId}/connect/${username}`);
+		ws = connectChatRoomSocket(roomId, username)
 
 		ws.onopen = function () {
 			console.log("Connected to WebSocket server");
@@ -314,16 +309,7 @@
 		onboardingContainer.classList.add('hidden');
 		chatContainer.classList.remove('hidden');
 
-		const response = await fetch(`${apiEndpoint}/chat/rooms/new`, {
-			method: 'POST',
-		})
-
-		if (response.status >= 400) {
-			alert('채팅방 생성에 실패했습니다.')
-			return
-		}
-
-		const {room_id} = await response.json()
+		const {room_id} = await createChatRoom('임시채팅방')
 		await joinRoom(room_id)
 	});
 
