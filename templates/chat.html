@@ -21,7 +21,7 @@
 	</div>
 </div>
 
-<div id="roomListContainer" class="hidden min-h-screen flex justify-center items-center">
+<div id="roomListContainer" class="min-h-screen flex justify-center items-center">
 	<div class="max-w-md w-full bg-white p-8 rounded shadow-lg">
 		<h1 class="text-xl font-bold mb-4">채팅방 선택</h1>
 		<ul id="roomList" class="mb-4"></ul>
@@ -134,7 +134,7 @@
 	</div>
 </div>
 <script>
-	const apiEndpoint = window.location.origin;
+	const apiEndpoint = `${window.location.origin}/api/v1`;
 	const socketEndpoint = apiEndpoint.replace('http', 'ws');
 
 	const onboardingUsernameInput = document.getElementById('onboardingUsernameInput');
@@ -228,22 +228,36 @@
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 	}
 
-	async function fetchRoomList() {
+	async function fetchChatRooms() {
 		const response = await fetch(`${apiEndpoint}/chat/rooms`);
-		const rooms = await response.json();
-		return rooms;
+		return await response.json();
 	}
 
-	function showRoomList(rooms) {
+	function renderChatRooms(rooms) {
 		roomList.innerHTML = ''; // 기존 목록 초기화
 		rooms.forEach(room => {
-			const roomItem = document.createElement('li');
-			roomItem.textContent = room;
-			roomItem.classList.add('p-2', 'hover:bg-gray-200', 'cursor-pointer');
+			const roomItemContainer = document.createElement('div');
+			roomItemContainer.classList.add('border-b', 'border-gray-200');
+			const roomItem = document.createElement('div');
+			roomItem.classList.add('p-2', 'hover:bg-gray-200', 'cursor-pointer', 'flex');
 			roomItem.addEventListener('click', function () {
-				joinRoom(room);
+				joinRoom(room.room_id);
 			});
-			roomList.appendChild(roomItem);
+
+			const roomName = document.createElement('div');
+			roomName.classList.add('flex-1');
+			roomName.textContent = room.room_name;
+			roomItem.appendChild(roomName);
+
+			const roomUserCount = document.createElement('div');
+			roomUserCount.classList.add('text-gray-500');
+			roomUserCount.textContent = `${room.user_count}명`;
+			roomItem.appendChild(roomUserCount);
+
+
+			roomItemContainer.appendChild(roomItem);
+
+			roomList.appendChild(roomItemContainer);
 		});
 	}
 
@@ -319,8 +333,8 @@
 
 		usernameInput.value = document.getElementById('onboardingUsernameInput').value;
 
-		const rooms = await fetchRoomList();
-		showRoomList(rooms);
+		const {chat_rooms} = await fetchChatRooms();
+		renderChatRooms(chat_rooms);
 	});
 
 	backButton.addEventListener('click', function () {

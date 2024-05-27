@@ -5,7 +5,7 @@ from dataclasses import dataclass
 class ChatRoomResponse:
     room_id: str
     room_name: str
-    connection_count: int
+    user_count: int
 
 
 @dataclass
