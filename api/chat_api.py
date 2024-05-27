@@ -57,7 +57,7 @@ async def connect_chat_room(websocket: WebSocket, room_id: str, username: str):
 
         while True:
             message = await connection.receive_message()
-            await chat_room_manager.broadcast(room_id=room_id).broadcast(message)
+            await chat_room_manager.broadcast(room_id=room_id, message=message)
 
     except WebSocketDisconnect:
         await chat_room_manager.disconnect(room_id=room_id, connection=connection)
