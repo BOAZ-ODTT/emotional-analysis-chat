@@ -4,10 +4,9 @@ import uuid
 from fastapi import APIRouter
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from service.chat.chat_room_manager import chat_rooms, ChatRoom
-from service.chat.message import Message
-from service.chat.user_connection import UserConnection
+from core.dependencies import chat_room_manager
 from dto.chat_room_response import ChatRoomResponse, ListChatRoomsResponse
+from service.chat.user_connection import UserConnection
 
 router = APIRouter(prefix="/v1/chat")
 
@@ -15,19 +14,19 @@ router = APIRouter(prefix="/v1/chat")
 @router.post("/rooms/new")
 async def create_chat_room():
     new_room_id = str(uuid.uuid4())
-    chat_rooms[new_room_id] = ChatRoom(new_room_id)
+    chat_room = chat_room_manager.create_chat_room(room_id=new_room_id)
 
     # 채팅방 클렌징을 위해 일정 시간동안 입장한 사람이 없다면 채팅방 제거
     async def check_and_clear_inactive_room(room_id):
         await asyncio.sleep(10)
-        if room_id in chat_rooms and chat_rooms[room_id].count_connections() == 0:
-            del chat_rooms[room_id]
+        if chat_room_manager.count_user_in_room(room_id=room_id) == 0:
+            chat_room_manager.delete_chat_room(room_id=room_id)
 
     asyncio.create_task(check_and_clear_inactive_room(new_room_id))
 
     return ChatRoomResponse(
         room_id=new_room_id,
-        room_name=chat_rooms[new_room_id].room_name,
+        room_name=chat_room.room_name,
         user_count=0,
     )
 
@@ -37,10 +36,10 @@ async def get_rooms():
     return ListChatRoomsResponse(
         chat_rooms=[
             ChatRoomResponse(
-                room_id=key,
-                room_name=value.room_name,
-                user_count=value.count_connections(),
-            ) for key, value in chat_rooms.items()
+                room_id=room.room_id,
+                room_name=room.room_name,
+                user_count=room.count_connections(),
+            ) for room in chat_room_manager.list_chat_rooms()
         ]
     )
 
@@ -54,17 +53,11 @@ async def connect_chat_room(websocket: WebSocket, room_id: str, username: str):
     )
 
     try:
-        await chat_rooms[room_id].connect(connection)
-        await chat_rooms[room_id].broadcast_system_message(message=f'{username}가 방에 입장했습니다.')
+        await chat_room_manager.connect(room_id=room_id, connection=connection)
 
         while True:
-            data = await websocket.receive_text()
-            message = Message.parse_raw(data)
-
-            await chat_rooms[room_id].broadcast(message)
-            connection.add_message(message)
+            message = await connection.receive_message()
+            await chat_room_manager.broadcast(room_id=room_id).broadcast(message)
 
     except WebSocketDisconnect:
-        await chat_rooms[room_id].disconnect(connection)
-        if room_id in chat_rooms:
-            await chat_rooms[room_id].broadcast(Message(username="System", message=f"{username}가 방에서 나갔습니다."))
+        await chat_room_manager.disconnect(room_id=room_id, connection=connection)

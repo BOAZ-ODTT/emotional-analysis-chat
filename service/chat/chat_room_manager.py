@@ -1,12 +1,16 @@
 import uuid
-from typing import Dict
+from typing import Dict, List
 
 from service.chat.connection_manager import ConnectionManager
 from service.chat.message import Message
 from service.chat.user_connection import UserConnection
 
 
-# TODO: ChatRoomRepository 또는 ChatRoomManager를 만들어서 관리하도록
+class NotFoundChatRoomException(Exception):
+    def __init__(self, room_id):
+        self.message = f"Chat room {room_id} not found"
+
+
 class ChatRoom:
     def __init__(self, room_id):
         self.room_id = room_id
@@ -19,9 +23,6 @@ class ChatRoom:
     async def disconnect(self, connection: UserConnection):
         self.manager.disconnect(connection)
 
-        if self.manager.count_connections() == 0:
-            del chat_rooms[self.room_id]  # 사용자가 모두 나가면 방 삭제
-
     async def broadcast(self, message: Message):
         await self.manager.broadcast(message)
 
@@ -31,5 +32,77 @@ class ChatRoom:
     def count_connections(self):
         return self.manager.count_connections()
 
+    def list_connections(self):
+        return self.manager.get_connections()
 
-chat_rooms: Dict[str, ChatRoom] = {}
+
+class ChatRoomManager:
+    def __init__(self):
+        self.chat_room_by_id: Dict[str, ChatRoom] = {}
+
+    def create_chat_room(self, room_id: str):
+        chat_room = ChatRoom(room_id)
+        self.chat_room_by_id[room_id] = chat_room
+        return chat_room
+
+    def get_chat_room(self, room_id: str) -> ChatRoom | None:
+        return self.chat_room_by_id.get(room_id)
+
+    def list_chat_rooms(self) -> List[ChatRoom]:
+        return list(self.chat_room_by_id.values())
+
+    def delete_chat_room(self, room_id: str):
+        del self.chat_room_by_id[room_id]
+
+    async def connect(self, room_id: str, connection: UserConnection):
+        chat_room = self.get_chat_room(room_id)
+        if chat_room:
+            await chat_room.connect(connection)
+            await self.broadcast_system_message(
+                room_id=room_id,
+                message=f'{connection.username}가 방에 입장했습니다.',
+            )
+        else:
+            raise NotFoundChatRoomException(room_id)
+
+    async def disconnect(self, room_id: str, connection: UserConnection):
+        chat_room = self.get_chat_room(room_id)
+        if chat_room:
+            await chat_room.disconnect(connection)
+            await self.broadcast_system_message(
+                room_id=room_id,
+                message=f"{connection.username}가 방에서 나갔습니다.",
+            )
+
+            if chat_room.count_connections() == 0:
+                self.delete_chat_room(room_id)
+        else:
+            raise NotFoundChatRoomException(room_id)
+
+    async def broadcast(self, room_id: str, message: Message):
+        chat_room = self.get_chat_room(room_id)
+        if chat_room:
+            await chat_room.broadcast(message)
+        else:
+            raise NotFoundChatRoomException(room_id)
+
+    async def broadcast_system_message(self, room_id: str, message: str):
+        chat_room = self.get_chat_room(room_id)
+        if chat_room:
+            await chat_room.broadcast_system_message(message)
+        else:
+            raise NotFoundChatRoomException(room_id)
+
+    def count_user_in_room(self, room_id: str):
+        chat_room = self.get_chat_room(room_id)
+        if chat_room:
+            return chat_room.count_connections()
+        else:
+            raise NotFoundChatRoomException(room_id)
+
+    def list_users_in_room(self, room_id: str):
+        chat_room = self.get_chat_room(room_id)
+        if chat_room:
+            return chat_room.manager.get_connections()
+        else:
+            raise NotFoundChatRoomException(room_id)

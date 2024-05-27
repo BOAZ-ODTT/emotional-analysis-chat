@@ -7,9 +7,8 @@ from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
 from api import chat_api
-from service.chat.chat_room_manager import chat_rooms
+from core.dependencies import emotion_classifier, chat_room_manager
 from service.chat.user_connection import UserConnection
-from core.dependencies import emotion_classifier
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -38,18 +37,14 @@ async def broadcast_emotion_message():
         try:
             await asyncio.sleep(20)
 
-            for key in chat_rooms.keys():
-                manager = chat_rooms[key].manager
-
-                connections = manager.get_connections()
-                if not connections:
+            for room in chat_room_manager.list_chat_rooms():
+                if room.count_connections() == 0:
                     continue
 
-                chose_connection: UserConnection = random.choice(connections)
-
-                messages = chose_connection.get_messages()
+                user_connection: UserConnection = random.choice(room.list_connections())
+                messages = user_connection.list_messages()
                 if len(messages) == 0:
-                    await manager.broadcast_system_message(
+                    await room.broadcast_system_message(
                         message="메시지를 입력해보세요!"
                     )
                     continue
@@ -61,8 +56,8 @@ async def broadcast_emotion_message():
 
                 emotion_text = emotion_classifier.classify(combined_message)
 
-                await manager.broadcast_system_message(
-                    message=f"{chose_connection.username}의 {emotion_text} 느껴집니다."
+                await room.broadcast_system_message(
+                    message=f"{user_connection.username}의 {emotion_text} 느껴집니다."
                 )
 
         except Exception as e:
