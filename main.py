@@ -1,111 +1,22 @@
 import asyncio
 import random
-import uuid
-from typing import Dict
 
 from fastapi import FastAPI, Request
 from starlette.responses import HTMLResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
-from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from connection_manager import ConnectionManager
-from emotion_classifier import EmotionClassifier
-from message import Message
-from user_connection import UserConnection
+from api import chat_api
+from service.chat.chat_room_manager import chat_rooms
+from service.chat.user_connection import UserConnection
+from core.dependencies import emotion_classifier
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-connection_manager = ConnectionManager()
-
-emotion_classifier = EmotionClassifier()
-
-
-# m1 import 이슈로 작업할 때는 MockEmotionClassifier 사용
-# main에 merge 되지 않도록 주의해주세요!
-# emotion_classifier = MockEmotionClassifier()
-
-
-class ChatRoom:
-    def __init__(self, room_id):
-        self.room_id = room_id
-        self.room_name = f"room {uuid.UUID(room_id).int % 10000}"
-        self.manager = ConnectionManager()
-
-    async def connect(self, connection: UserConnection):
-        await self.manager.connect(connection)
-
-    async def disconnect(self, connection: UserConnection):
-        self.manager.disconnect(connection)
-
-        if self.manager.count_connections() == 0:
-            del chat_rooms[self.room_id]  # 사용자가 모두 나가면 방 삭제
-
-    async def broadcast(self, message: Message):
-        await self.manager.broadcast(message)
-
-    async def broadcast_system_message(self, message: str):
-        await self.manager.broadcast_system_message(message)
-
-    def count_connections(self):
-        return self.manager.count_connections()
-
-
-chat_rooms: Dict[str, ChatRoom] = {}
-
-
-@app.post("/chat/rooms/new")
-async def create_chat_room():
-    new_room_id = str(uuid.uuid4())
-    chat_rooms[new_room_id] = ChatRoom(new_room_id)
-
-    # 채팅방 클렌징을 위해 일정 시간동안 입장한 사람이 없다면 채팅방 제거
-    async def check_and_clear_inactive_room(room_id):
-        await asyncio.sleep(10)
-        if room_id in chat_rooms and chat_rooms[room_id].count_connections() == 0:
-            del chat_rooms[room_id]
-
-    asyncio.create_task(check_and_clear_inactive_room(new_room_id))
-
-    return {"room_id": new_room_id, "room_name": chat_rooms[new_room_id].room_name}
-
-
-@app.websocket("/chat/{room_id}/connect/{username}")
-async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
-    connection = UserConnection(
-        user_id=str(uuid.uuid4()),
-        websocket=websocket,
-        username=username,
-    )
-
-    try:
-        await chat_rooms[room_id].connect(connection)
-        # 클라이언트에게 매개변수를 포함한 초기 메시지 전송
-        await chat_rooms[room_id].broadcast(Message(
-            username='Root', message=chat_rooms[room_id].room_name
-        ))
-
-        await chat_rooms[room_id].broadcast_system_message(message=f'{username}가 방에 입장했습니다.')
-
-        while True:
-            data = await websocket.receive_text()
-            message = Message.parse_raw(data)
-
-            await chat_rooms[room_id].broadcast(message)
-            connection.add_message(message)
-
-    except WebSocketDisconnect:
-        await chat_rooms[room_id].disconnect(connection)
-        if room_id in chat_rooms:
-            await chat_rooms[room_id].broadcast(Message(username="System", message=f"{username}가 방에서 나갔습니다."))
-
-
-@app.get("/chat/rooms")
-async def get_rooms():
-    # TODO: 임시로 room_id를 사용합니다. 추후 ChatRoom response를 추가하고 개선합니다.
-    return [value.room_id for value in chat_rooms.values()]
+# web path와 구분을 위해 /api prefix를 사용합니다.
+app.include_router(chat_api.router, prefix="/api")
 
 
 # root

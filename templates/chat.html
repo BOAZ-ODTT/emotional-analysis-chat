@@ -21,7 +21,7 @@
 	</div>
 </div>
 
-<div id="roomListContainer" class="hidden min-h-screen flex justify-center items-center">
+<div id="roomListContainer" class="min-h-screen flex justify-center items-center">
 	<div class="max-w-md w-full bg-white p-8 rounded shadow-lg">
 		<h1 class="text-xl font-bold mb-4">채팅방 선택</h1>
 		<ul id="roomList" class="mb-4"></ul>
@@ -133,9 +133,8 @@
 		</div>
 	</div>
 </div>
+<script src="{{ url_for('static', path='js/api.js') }}"></script>
 <script>
-	const apiEndpoint = window.location.origin;
-	const socketEndpoint = apiEndpoint.replace('http', 'ws');
 
 	const onboardingUsernameInput = document.getElementById('onboardingUsernameInput');
 	const createRoomButton = document.getElementById('createRoomButton');
@@ -228,22 +227,32 @@
 		messagesContainer.scrollTop = messagesContainer.scrollHeight;
 	}
 
-	async function fetchRoomList() {
-		const response = await fetch(`${apiEndpoint}/chat/rooms`);
-		const rooms = await response.json();
-		return rooms;
-	}
 
-	function showRoomList(rooms) {
+	function renderChatRooms(rooms) {
 		roomList.innerHTML = ''; // 기존 목록 초기화
 		rooms.forEach(room => {
-			const roomItem = document.createElement('li');
-			roomItem.textContent = room;
-			roomItem.classList.add('p-2', 'hover:bg-gray-200', 'cursor-pointer');
+			const roomItemContainer = document.createElement('div');
+			roomItemContainer.classList.add('border-b', 'border-gray-200');
+			const roomItem = document.createElement('div');
+			roomItem.classList.add('p-2', 'hover:bg-gray-200', 'cursor-pointer', 'flex');
 			roomItem.addEventListener('click', function () {
-				joinRoom(room);
+				joinRoom(room.room_id);
 			});
-			roomList.appendChild(roomItem);
+
+			const roomName = document.createElement('div');
+			roomName.classList.add('flex-1');
+			roomName.textContent = room.room_name;
+			roomItem.appendChild(roomName);
+
+			const roomUserCount = document.createElement('div');
+			roomUserCount.classList.add('text-gray-500');
+			roomUserCount.textContent = `${room.user_count}명`;
+			roomItem.appendChild(roomUserCount);
+
+
+			roomItemContainer.appendChild(roomItem);
+
+			roomList.appendChild(roomItemContainer);
 		});
 	}
 
@@ -260,7 +269,7 @@
 		roomListContainer.classList.add('hidden');
 		chatContainer.classList.remove('hidden');
 
-		ws = new WebSocket(`${socketEndpoint}/chat/${roomId}/connect/${username}`);
+		ws = connectChatRoomSocket(roomId, username)
 
 		ws.onopen = function () {
 			console.log("Connected to WebSocket server");
@@ -300,16 +309,7 @@
 		onboardingContainer.classList.add('hidden');
 		chatContainer.classList.remove('hidden');
 
-		const response = await fetch(`${apiEndpoint}/chat/rooms/new`, {
-			method: 'POST',
-		})
-
-		if (response.status >= 400) {
-			alert('채팅방 생성에 실패했습니다.')
-			return
-		}
-
-		const {room_id} = await response.json()
+		const {room_id} = await createChatRoom('임시채팅방')
 		await joinRoom(room_id)
 	});
 
@@ -319,8 +319,8 @@
 
 		usernameInput.value = document.getElementById('onboardingUsernameInput').value;
 
-		const rooms = await fetchRoomList();
-		showRoomList(rooms);
+		const {chat_rooms} = await fetchChatRooms();
+		renderChatRooms(chat_rooms);
 	});
 
 	backButton.addEventListener('click', function () {
