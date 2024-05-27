@@ -1,5 +1,5 @@
-from chat.message import Message, MessageType
-from chat.user_connection import UserConnection
+from service.chat.message import Message, MessageType
+from service.chat.user_connection import UserConnection
 
 
 class ConnectionManager:

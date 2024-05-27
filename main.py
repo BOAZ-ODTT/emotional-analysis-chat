@@ -7,8 +7,8 @@ from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
 from api import chat_api
-from chat.chat_room_manager import chat_rooms
-from chat.user_connection import UserConnection
+from service.chat.chat_room_manager import chat_rooms
+from service.chat.user_connection import UserConnection
 from core.dependencies import emotion_classifier
 
 app = FastAPI()

@@ -2,7 +2,7 @@ from typing import List
 
 from starlette.websockets import WebSocket
 
-from chat.message import Message
+from service.chat.message import Message
 
 
 class UserConnection:

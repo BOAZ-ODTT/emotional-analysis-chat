@@ -4,9 +4,9 @@ import uuid
 from fastapi import APIRouter
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from chat.chat_room_manager import chat_rooms, ChatRoom
-from chat.message import Message
-from chat.user_connection import UserConnection
+from service.chat.chat_room_manager import chat_rooms, ChatRoom
+from service.chat.message import Message
+from service.chat.user_connection import UserConnection
 from dto.chat_room_response import ChatRoomResponse, ListChatRoomsResponse
 
 router = APIRouter(prefix="/v1/chat")

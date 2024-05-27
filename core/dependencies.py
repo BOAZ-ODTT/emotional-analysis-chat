@@ -1,5 +1,5 @@
-from chat.connection_manager import ConnectionManager
-from emotion_analysis.mock_emotion_classifier import MockEmotionClassifier
+from service.chat.connection_manager import ConnectionManager
+from service.emotion_analysis.mock_emotion_classifier import MockEmotionClassifier
 
 # DI 구조를 고민하다가 지금은 단순하게 여기에 의존성을 Singleton으로 선언해둡니다.
 

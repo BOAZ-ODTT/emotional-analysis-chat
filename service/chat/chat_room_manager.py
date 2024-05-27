@@ -1,9 +1,9 @@
 import uuid
 from typing import Dict
 
-from chat.connection_manager import ConnectionManager
-from chat.message import Message
-from chat.user_connection import UserConnection
+from service.chat.connection_manager import ConnectionManager
+from service.chat.message import Message
+from service.chat.user_connection import UserConnection
 
 
 # TODO: ChatRoomRepository 또는 ChatRoomManager를 만들어서 관리하도록
