@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 
@@ -13,3 +14,4 @@ class Message(BaseModel):
     username: str
     message: str
     message_type: Optional[MessageType] = None
+    sent_at: Optional[datetime] = datetime.now()
