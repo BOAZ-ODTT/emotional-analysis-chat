@@ -269,7 +269,7 @@
 		roomListContainer.classList.add('hidden');
 		chatContainer.classList.remove('hidden');
 
-		ws = connectChatRoomSocket(roomId, username)
+		ws = await connectChatRoomSocket(roomId, username)
 
 		ws.onopen = function () {
 			console.log("Connected to WebSocket server");
