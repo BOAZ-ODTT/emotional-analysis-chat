@@ -14,18 +14,18 @@ class ConnectionManager:
         self.active_connections.remove(connection)
 
     async def broadcast_system_message(self, message: str):
-        system_message = Message(
-            username="System",
-            message=message,
-            message_type=MessageType.SYSTEM_MESSAGE,
-        )
-
         for connection in self.active_connections:
-            await connection.send_text(system_message.json())
+            await connection.send_message(
+                Message(
+                    username="System",
+                    message=message,
+                    message_type=MessageType.SYSTEM_MESSAGE,
+                ),
+            )
 
     async def broadcast(self, message: Message):
         for connection in self.active_connections:
-            await connection.send_text(message.json())
+            await connection.send_message(message)
 
     def get_connections(self):
         return self.active_connections
