@@ -51,6 +51,22 @@ async def list_rooms():
     )
 
 
+@router.get("/rooms/{room_id}")
+async def get_room(room_id: str):
+    room = chat_room_manager.get_chat_room(room_id=room_id)
+
+    if room is None:
+        return {"message": f"Chat room {room_id} not found"}, 404
+
+    return ChatRoomResponse(
+        room_id=room.room_id,
+        room_name=room.room_name,
+        user_count=room.count_connections(),
+    )
+
+
+
+
 @router.websocket("/{room_id}/connect/{username}")
 async def connect_chat_room(websocket: WebSocket, room_id: str, username: str):
     connection = UserConnection(

@@ -38,13 +38,25 @@
 	const roomName = document.getElementById("roomName");
 	const messagesContainer = document.getElementById('messagesContainer');
 
-	let username = "{{ username }}";
+	let myName = "{{ username }}";
 	let roomId = "{{ room_id }}";
-
 	let ws = null;
 
-	function setUserName(newUserName) {
-		username = newUserName;
+
+	document.addEventListener('DOMContentLoaded', async function () {
+		try {
+			const room = await fetchChatRoom(roomId);
+			roomName.innerText = room.room_name;
+			usernameInput.value = myName;
+		} catch (e) {
+			alert("채팅방 정보를 불러오는 중 오류가 발생했습니다. 메인화면으로 이동합니다.");
+			location.href = '/';
+		}
+	});
+
+
+	function setMyName(newUserName) {
+		myName = newUserName;
 	}
 
 	document.addEventListener('DOMContentLoaded', async function () {
@@ -56,7 +68,7 @@
 
 		if (input.value) {
 			const message = {
-				username: username,
+				username: myName,
 				message: input.value
 			};
 
@@ -103,12 +115,11 @@
 		return messageElement;
 	}
 
-	function addMessage(message) {
+	function renderNewMessage(message) {
 		const {username, message: messageContent, message_type, sent_at} = message;
 		const sent_at_str = new Date(sent_at ?? new Date()).toLocaleTimeString();
 
-
-		let isOwnMessage = username === username;
+		let isOwnMessage = myName === username;
 		const messageElement = createMessageElement(username, messageContent, sent_at_str, isOwnMessage);
 		messagesContainer.appendChild(messageElement);
 		scrollToBottom();
@@ -119,7 +130,7 @@
 	}
 
 	async function joinRoom(roomId) {
-		ws = await connectChatRoomSocket(roomId, username);
+		ws = await connectChatRoomSocket(roomId, myName);
 
 		ws.onopen = function () {
 			console.log("Connected to WebSocket server");
@@ -127,11 +138,7 @@
 
 		ws.onmessage = function (event) {
 			const message = JSON.parse(event.data);
-			if (message.username === "Root") {
-				roomName.innerText = message.message;
-			} else {
-				addMessage(message);
-			}
+			renderNewMessage(message);
 		};
 
 		ws.onclose = function () {
@@ -144,7 +151,7 @@
 			console.error("WebSocket error:", error);
 		};
 
-		setUserName(username);
+		setMyName(myName);
 	}
 
 	document.getElementById('sendButton').addEventListener('click', sendMessage);
@@ -154,9 +161,5 @@
 			sendMessage();
 		}
 	});
-
-	// Automatically scroll to the bottom when a new message is added
-	const observer = new MutationObserver(scrollToBottom);
-	observer.observe(document.getElementById('messagesContainer').querySelector('.space-y-4'), {childList: true});
 </script>
 {% endblock %}
