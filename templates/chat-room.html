@@ -22,8 +22,12 @@
 			</div>
 		</header>
 
-		<div class="flex-col flex-1">
+		<div class="flex-col flex-1 relative">
 			<div class="flex h-full flex-col justify-between">
+				<div id="systemAlertsContainer"
+				     class="absolute px-4 w-full left-0 top-2 left-1/2 transform -translate-x-1/2 space-y-2 ">
+					<!-- System alerts will be displayed here -->
+				</div>
 				<div id="messagesContainer" class="overflow-y-scroll p-4 h-[70vh]">
 					<div class="space-y-4"></div>
 				</div>
@@ -46,13 +50,14 @@
 	const roomName = document.getElementById("roomName");
 	const messagesContainer = document.getElementById('messagesContainer');
   const roomUserCount = document.getElementById('roomUserCount');
+	const systemAlertsContainer = document.getElementById('systemAlertsContainer');
 
-	const messageType = {
+	const MessageType = {
 		USER_MESSAGE: "USER_MESSAGE",
 		SYSTEM_MESSAGE: "SYSTEM_MESSAGE",
 	}
 
-	const messageEventType = {
+	const MessageEventType = {
 		USER_JOINED: 'USER_JOINED',
 		USER_LEFT: 'USER_LEFT',
 	};
@@ -60,6 +65,12 @@
 	let myName = "{{ username }}";
 	let roomId = "{{ room_id }}";
 	let ws = null;
+	let alerts = [];
+
+
+	function setMyName(newUserName) {
+		myName = newUserName;
+	}
 
 
 	document.addEventListener('DOMContentLoaded', async function () {
@@ -90,9 +101,46 @@
 	}
 
 
-	function setMyName(newUserName) {
-		myName = newUserName;
+	function showAlert(message) {
+		const alertContainer = document.getElementById('systemAlertsContainer');
+
+		if (alertContainer.children.length >= 3) {
+			const oldestAlert = alertContainer.children[0];
+			if (oldestAlert) {
+				oldestAlert.classList.add('fade-outable-fast', 'opacity-0');
+				setTimeout(() => {
+					alertContainer.removeChild(oldestAlert);
+				}, 1);
+			}
+		}
+
+		const alertBox = document.createElement('div');
+
+		alertBox.className = 'w-full bg-gray-700 text-white text-sm font-bold rounded-lg border shadow-lg p-2 opacity-90 fade-outable';
+		alertBox.innerText = message;
+		alertContainer.appendChild(alertBox);
+
+
+		const showTimeForAlert = 9000;
+		const fadeOutTime = 1000;
+
+		setTimeout(() => {
+			// 다른 코드에서 alertBox가 삭제되었을 경우를 대비하여 체크
+			if (!alertContainer.contains(alertBox)) {
+				return;
+			}
+			alertBox.classList.add('opacity-0');
+		}, showTimeForAlert);
+
+		setTimeout(() => {
+			// 다른 코드에서 alertBox가 삭제되었을 경우를 대비하여 체크
+			if (!alertContainer.contains(alertBox)) {
+				return;
+			}
+			alertContainer.removeChild(alertBox);
+		}, showTimeForAlert + fadeOutTime);
 	}
+
 
 	function sendMessage() {
 		const input = document.getElementById('messageInput');
@@ -157,13 +205,29 @@
 		} = message;
 		const sentAtStr = new Date(sentAt ?? new Date()).toLocaleTimeString();
 
-		if (eventType === messageEventType.USER_JOINED || eventType === messageEventType.USER_LEFT) {
-			updateChatRoomInfo(roomId);
+		if (messageType === MessageType.SYSTEM_MESSAGE) {
+			if (eventType === MessageEventType.USER_JOINED || eventType === MessageEventType.USER_LEFT) {
+				updateChatRoomInfo(roomId);
+				// 입장 메시지 추가
+
+				const eventMessageContainer = document.createElement('div')
+				eventMessageContainer.classList.add('text-center', 'text-sm', 'text-gray-500');
+				eventMessageContainer.textContent = messageContent;
+
+				messagesContainer.appendChild(
+					eventMessageContainer
+				);
+			} else {
+				showAlert(messageContent);
+			}
 		}
 
-		let isOwnMessage = myName === username;
-		const messageElement = createMessageElement(username, messageContent, eventType, sentAtStr, isOwnMessage);
-		messagesContainer.appendChild(messageElement);
+		if (messageType === MessageType.USER_MESSAGE) {
+			let isOwnMessage = myName === username;
+			const messageElement = createMessageElement(username, messageContent, eventType, sentAtStr, isOwnMessage);
+			messagesContainer.appendChild(messageElement);
+		}
+
 		scrollToBottom();
 	}
 

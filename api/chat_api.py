@@ -7,6 +7,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from core.dependencies import chat_room_manager
 from dto.chat_room_response import ChatRoomResponse, ListChatRoomsResponse
 from service.chat.chat_room_manager import NotFoundChatRoomException
+from service.chat.message import MessageType
 from service.chat.user_connection import UserConnection
 
 router = APIRouter(prefix="/v1/chat")
@@ -80,6 +81,7 @@ async def connect_chat_room(websocket: WebSocket, room_id: str, username: str):
 
         while True:
             message = await connection.receive_message()
+            message.message_type = MessageType.USER_MESSAGE
             await chat_room_manager.broadcast(room_id=room_id, message=message)
 
     except WebSocketDisconnect:

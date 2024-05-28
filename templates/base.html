@@ -6,6 +6,15 @@
 	<title>감정 분석 채팅</title>
 	<script src="https://cdn.tailwindcss.com"></script>
 	<link rel="icon" href="{{ url_for('static', path='favicon.ico') }}" type="image/x-icon">
+	<style>
+		.fade-outable {
+			transition: opacity 1s ease-out;
+		}
+
+		.fade-outable-fast {
+			transition: opacity 0.2s ease-out;
+		}
+	</style>
 </head>
 </head>
 <body class="bg-gray-100 font-sans">
