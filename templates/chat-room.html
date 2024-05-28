@@ -113,34 +113,35 @@
 		const messageElement = document.createElement('div');
 		const messageContainer = document.createElement('div');
 		const messageContentElement = document.createElement('div');
-		const timestampElement = document.createElement('div');
+		const messageSentAtElement = document.createElement('div');
 
 		messageElement.classList.add('flex', 'items-start', 'gap-3', 'mt-5', 'mb-5');
 		messageContainer.classList.add('rounded-lg', 'p-3', 'shadow-sm', 'break-words', 'max-w-full');
 
 		messageContentElement.textContent = message;
-		timestampElement.textContent = sentAt;
-		timestampElement.classList.add('mt-2', 'text-xs');
+		messageSentAtElement.textContent = sentAt;
+		messageSentAtElement.classList.add('mt-2', 'text-xs');
 
 		if (isOwnMessage) {
 			messageElement.classList.add('justify-end');
 			messageContainer.classList.add('bg-blue-500', 'text-white');
+			messageSentAtElement.classList.add('text-white-500', 'opacity-30');
 		} else {
 			messageContainer.classList.add('bg-white');
 
-			messageContentElement.classList.add('text-sm', 'text-gray-500');
-			timestampElement.classList.add('text-gray-500');
+			messageContentElement.classList.add('text-sm', 'text-gray');
+			messageSentAtElement.classList.add('text-gray-500', 'opacity-30');
 		}
 
 		if (name) {
 			const nameElement = document.createElement('div');
-			nameElement.classList.add('font-medium');
+			nameElement.classList.add('font-normal', 'text-xs', 'opacity-50');
 			nameElement.textContent = name;
 			messageContainer.appendChild(nameElement);
 		}
 
 		messageContainer.appendChild(messageContentElement);
-		messageContainer.appendChild(timestampElement);
+		messageContainer.appendChild(messageSentAtElement);
 		messageElement.appendChild(messageContainer);
 
 		return messageElement;
