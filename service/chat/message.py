@@ -10,8 +10,14 @@ class MessageType(Enum):
     SYSTEM_MESSAGE = "SYSTEM_MESSAGE"
 
 
+class MessageEventType(Enum):
+    USER_JOINED = "USER_JOINED"
+    USER_LEFT = "USER_LEFT"
+
+
 class Message(BaseModel):
     username: str
     message: str
     message_type: Optional[MessageType] = None
+    event_type: Optional[MessageEventType] = None
     sent_at: Optional[datetime] = datetime.now()

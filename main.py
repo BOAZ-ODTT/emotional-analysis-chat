@@ -60,7 +60,8 @@ async def broadcast_emotion_message():
                 user_connection: UserConnection = random.choice(room.list_connections())
                 messages = user_connection.list_messages()
                 if len(messages) == 0:
-                    await room.broadcast_system_message(
+                    await chat_room_manager.broadcast_system_message(
+                        room_id=room.room_id,
                         message="메시지를 입력해보세요!"
                     )
                     continue
@@ -72,7 +73,8 @@ async def broadcast_emotion_message():
 
                 emotion_text = emotion_classifier.classify(combined_message)
 
-                await room.broadcast_system_message(
+                await chat_room_manager.broadcast_system_message(
+                    room_id=room.room_id,
                     message=f"{user_connection.username}의 {emotion_text} 느껴집니다."
                 )
 

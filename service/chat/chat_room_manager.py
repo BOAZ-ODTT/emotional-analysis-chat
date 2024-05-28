@@ -1,8 +1,8 @@
 import uuid
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from service.chat.connection_manager import ConnectionManager
-from service.chat.message import Message
+from service.chat.message import Message, MessageEventType, MessageType
 from service.chat.user_connection import UserConnection
 
 
@@ -25,9 +25,6 @@ class ChatRoom:
 
     async def broadcast(self, message: Message):
         await self.manager.broadcast(message)
-
-    async def broadcast_system_message(self, message: str):
-        await self.manager.broadcast_system_message(message)
 
     def count_connections(self):
         return self.manager.count_connections()
@@ -61,6 +58,7 @@ class ChatRoomManager:
             await self.broadcast_system_message(
                 room_id=room_id,
                 message=f'{connection.username}가 방에 입장했습니다.',
+                event_type=MessageEventType.USER_JOINED,
             )
         else:
             raise NotFoundChatRoomException(room_id)
@@ -72,6 +70,7 @@ class ChatRoomManager:
             await self.broadcast_system_message(
                 room_id=room_id,
                 message=f"{connection.username}가 방에서 나갔습니다.",
+                event_type=MessageEventType.USER_LEFT,
             )
 
             if chat_room.count_connections() == 0:
@@ -86,10 +85,17 @@ class ChatRoomManager:
         else:
             raise NotFoundChatRoomException(room_id)
 
-    async def broadcast_system_message(self, room_id: str, message: str):
+    async def broadcast_system_message(self, room_id: str, message: str, event_type: Optional[MessageEventType] = None):
         chat_room = self.get_chat_room(room_id)
         if chat_room:
-            await chat_room.broadcast_system_message(message)
+            await chat_room.broadcast(
+                Message(
+                    username="System",
+                    message=message,
+                    message_type=MessageType.SYSTEM_MESSAGE,
+                    event_type=event_type,
+                )
+            )
         else:
             raise NotFoundChatRoomException(room_id)
 

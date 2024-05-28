@@ -1,42 +1,61 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div id="chatContainer" class="flex h-screen w-full flex-col bg-gray-100 overflow-hidden">
-	<header class="flex h-14 shrink-0 items-center justify-between border-b bg-white px-4">
-		<div class="flex items-center gap-2">
-			<div>
-				이름:
-				<input type="text" id="usernameInput" placeholder="유저 이름"
-				       class="p-2 rounded-l border border-gray-300 " disabled>
-			</div>
-			<h1 id="roomName" class="pl-4 text-lg font-semibold">Chat Rooms</h1>
-		</div>
-	</header>
-	<div class="flex-1">
-		<div class="flex h-full flex-col">
-			<div id="messagesContainer" class="overflow-y-scroll p-4 h-[80vh]">
-				<div class="space-y-4"></div>
-			</div>
-			<div class="flex h-16 shrink-0 items-center border-t bg-white px-4">
-				<input id="messageInput"
-				       class="flex h-10 w-full border border-input ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1 rounded-lg bg-gray-100 px-4 py-2 text-sm focus:bg-white"
-				       placeholder="Type your message..."
-				       type="text"
-				/>
-				<button id="sendButton"
-				        class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 ml-2 rounded-full">
-					<img src="{{ url_for('static', path='/icons/message_send_icon.svg') }}" alt="message_send_icon">
+<div class="flex items-center h-screen flex-col bg-white">
+	<div id="chatRoomContainer" class="flex w-full max-w-xl h-screen flex-col bg-gray-100 overflow-hidden">
+		<header class="flex-col shrink-0 items-center justify-between border-b bg-white px-4 py-2">
+			<div class="flex items-center gap-2 pt-1">
+				<button onclick="goBack()" class="p-1 rounded hover:bg-gray-300 focus:outline-none">
+					<
 				</button>
+				<div class="flex font-semibold">
+					<div id="roomName" class="pl-4 text-lg">Chat Rooms</div>
+					<div id="roomUserCount" class="pl-2 text-gray-500 text-sm content-center">
+						N
+					</div>
+
+				</div>
+
+			</div>
+			<div class="flex">
+
+			</div>
+		</header>
+
+		<div class="flex-col flex-1">
+			<div class="flex h-full flex-col justify-between">
+				<div id="messagesContainer" class="overflow-y-scroll p-4 h-[70vh]">
+					<div class="space-y-4"></div>
+				</div>
+				<div class="flex p-2 shrink-0 items-center border-t bg-white px-4">
+					<input id="messageInput"
+					       class="flex h-10 w-full border border-input ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1 rounded-lg bg-gray-100 px-4 py-2 text-sm focus:bg-white"
+					       placeholder="Type your message..."
+					       type="text"
+					/>
+					<button id="sendButton"
+					        class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 ml-2 rounded-full">
+						<img src="{{ url_for('static', path='/icons/message_send_icon.svg') }}" alt="message_send_icon">
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
 </div>
-
 <script>
-	const chatContainer = document.getElementById('chatContainer');
-	const usernameInput = document.getElementById('usernameInput');
 	const roomName = document.getElementById("roomName");
 	const messagesContainer = document.getElementById('messagesContainer');
+  const roomUserCount = document.getElementById('roomUserCount');
+
+	const messageType = {
+		USER_MESSAGE: "USER_MESSAGE",
+		SYSTEM_MESSAGE: "SYSTEM_MESSAGE",
+	}
+
+	const messageEventType = {
+		USER_JOINED: 'USER_JOINED',
+		USER_LEFT: 'USER_LEFT',
+	};
 
 	let myName = "{{ username }}";
 	let roomId = "{{ room_id }}";
@@ -45,23 +64,35 @@
 
 	document.addEventListener('DOMContentLoaded', async function () {
 		try {
-			const room = await fetchChatRoom(roomId);
-			roomName.innerText = room.room_name;
-			usernameInput.value = myName;
+			await joinRoom(roomId);
+			await updateChatRoomInfo(roomId);
+		} catch (e) {
+			alert("채팅방에 접속하는 중 오류가 발생했습니다. 메인화면으로 이동합니다.");
+			location.href = '/';
+		}
+	});
+
+	async function updateChatRoomInfo(roomId) {
+		try {
+			const {room_name, user_count} = await fetchChatRoom(roomId);
+
+			roomName.innerText = room_name;
+			roomUserCount.innerText = user_count;
+
 		} catch (e) {
 			alert("채팅방 정보를 불러오는 중 오류가 발생했습니다. 메인화면으로 이동합니다.");
 			location.href = '/';
 		}
-	});
+	}
+
+	function goBack() {
+		location.href = '/';
+	}
 
 
 	function setMyName(newUserName) {
 		myName = newUserName;
 	}
-
-	document.addEventListener('DOMContentLoaded', async function () {
-		await joinRoom(roomId);
-	});
 
 	function sendMessage() {
 		const input = document.getElementById('messageInput');
@@ -78,7 +109,7 @@
 		}
 	}
 
-	function createMessageElement(name, message, sentAt, isOwnMessage = true) {
+	function createMessageElement(name, message, event_type = undefined, sentAt, isOwnMessage = true) {
 		const messageElement = document.createElement('div');
 		const messageContainer = document.createElement('div');
 		const messageContentElement = document.createElement('div');
@@ -97,15 +128,15 @@
 		} else {
 			messageContainer.classList.add('bg-white');
 
-			if (name) {
-				const nameElement = document.createElement('div');
-				nameElement.classList.add('font-medium');
-				nameElement.textContent = name;
-				messageContainer.appendChild(nameElement);
-			}
-
 			messageContentElement.classList.add('text-sm', 'text-gray-500');
 			timestampElement.classList.add('text-gray-500');
+		}
+
+		if (name) {
+			const nameElement = document.createElement('div');
+			nameElement.classList.add('font-medium');
+			nameElement.textContent = name;
+			messageContainer.appendChild(nameElement);
 		}
 
 		messageContainer.appendChild(messageContentElement);
@@ -115,12 +146,22 @@
 		return messageElement;
 	}
 
-	function renderNewMessage(message) {
-		const {username, message: messageContent, message_type, sent_at} = message;
-		const sent_at_str = new Date(sent_at ?? new Date()).toLocaleTimeString();
+	function handleMessage(message) {
+		const {
+			username,
+			message: messageContent,
+			message_type: messageType,
+			event_type: eventType,
+			sent_at: sentAt
+		} = message;
+		const sentAtStr = new Date(sentAt ?? new Date()).toLocaleTimeString();
+
+		if (eventType === messageEventType.USER_JOINED || eventType === messageEventType.USER_LEFT) {
+			updateChatRoomInfo(roomId);
+		}
 
 		let isOwnMessage = myName === username;
-		const messageElement = createMessageElement(username, messageContent, sent_at_str, isOwnMessage);
+		const messageElement = createMessageElement(username, messageContent, eventType, sentAtStr, isOwnMessage);
 		messagesContainer.appendChild(messageElement);
 		scrollToBottom();
 	}
@@ -138,7 +179,7 @@
 
 		ws.onmessage = function (event) {
 			const message = JSON.parse(event.data);
-			renderNewMessage(message);
+			handleMessage(message);
 		};
 
 		ws.onclose = function () {

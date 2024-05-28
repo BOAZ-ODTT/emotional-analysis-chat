@@ -36,6 +36,7 @@
 	const roomName = document.getElementById("room-name");
 
 	let username = `익명${(Math.random()).toString().substring(2, 6)}`;
+	let rooms = [];
 	let ws = null;
 
 	onboardingUsernameInput.value = username;
@@ -44,15 +45,25 @@
 		username = newUserName;
 	}
 
-	// document load 되면 채팅방 리스트 조회
+	function setRooms(newRooms) {
+		rooms = newRooms;
+	}
+
+
 	document.addEventListener('DOMContentLoaded', async function () {
-		const {chat_rooms} = await fetchChatRooms();
-		renderChatRooms(chat_rooms);
+		await updateChatRooms();
+		setInterval(updateChatRooms, 2000);
 	});
 
+	async function updateChatRooms() {
+		const {chat_rooms: rooms} = await fetchChatRooms();
+		setRooms(rooms);
+		renderChatRooms();
+	}
 
-	function renderChatRooms(rooms) {
-		roomList.innerHTML = ''; // 기존 목록 초기화
+
+	function renderChatRooms() {
+		roomList.innerHTML = '';
 		rooms.forEach(room => {
 			const roomItemContainer = document.createElement('div');
 			roomItemContainer.classList.add('border-b', 'border-gray-200');
@@ -88,7 +99,7 @@
 			return;
 		}
 
-		const {room_id} = await createChatRoom('임시채팅방')
+		const {room_id} = await createChatRoom('채팅방이름')
 		await joinRoom(room_id)
 	});
 

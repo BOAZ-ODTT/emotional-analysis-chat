@@ -1,4 +1,4 @@
-from service.chat.message import Message, MessageType
+from service.chat.message import Message
 from service.chat.user_connection import UserConnection
 
 
@@ -12,16 +12,6 @@ class ConnectionManager:
 
     def disconnect(self, connection: UserConnection):
         self.active_connections.remove(connection)
-
-    async def broadcast_system_message(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_message(
-                Message(
-                    username="System",
-                    message=message,
-                    message_type=MessageType.SYSTEM_MESSAGE,
-                ),
-            )
 
     async def broadcast(self, message: Message):
         for connection in self.active_connections:
