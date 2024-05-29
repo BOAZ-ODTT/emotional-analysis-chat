@@ -1,8 +1,9 @@
 import asyncio
 import random
+from typing import Optional
 
-from fastapi import FastAPI, Request
-from starlette.responses import HTMLResponse
+from fastapi import FastAPI, Request, Query
+from starlette.responses import HTMLResponse, RedirectResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
@@ -18,12 +19,27 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(chat_api.router, prefix="/api")
 
 
-# root
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse(
         request=request,
-        name='chat.html',
+        name='chat-room-list.html',
+    )
+
+
+@app.get("/rooms/{room_id}", response_class=HTMLResponse)
+async def room(request: Request, room_id: str, username: Optional[str] = Query(None)):
+    if username is None:
+        return RedirectResponse(url="/")
+
+    chat_room = chat_room_manager.get_chat_room(room_id=room_id)
+    if chat_room is None:
+        return RedirectResponse(url="/")
+
+    return templates.TemplateResponse(
+        request=request,
+        name='chat-room.html',
+        context={"room_id": room_id, "username": username},
     )
 
 
@@ -44,7 +60,8 @@ async def broadcast_emotion_message():
                 user_connection: UserConnection = random.choice(room.list_connections())
                 messages = user_connection.list_messages()
                 if len(messages) == 0:
-                    await room.broadcast_system_message(
+                    await chat_room_manager.broadcast_system_message(
+                        room_id=room.room_id,
                         message="메시지를 입력해보세요!"
                     )
                     continue
@@ -56,7 +73,8 @@ async def broadcast_emotion_message():
 
                 emotion_text = emotion_classifier.classify(combined_message)
 
-                await room.broadcast_system_message(
+                await chat_room_manager.broadcast_system_message(
+                    room_id=room.room_id,
                     message=f"{user_connection.username}의 {emotion_text} 느껴집니다."
                 )
 

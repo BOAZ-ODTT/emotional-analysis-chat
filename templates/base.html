@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+	<title>감정 분석 채팅</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<link rel="icon" href="{{ url_for('static', path='favicon.ico') }}" type="image/x-icon">
+	<style>
+		.fade-outable {
+			transition: opacity 1s ease-out;
+		}
+
+		.fade-outable-fast {
+			transition: opacity 0.2s ease-out;
+		}
+	</style>
+</head>
+</head>
+<body class="bg-gray-100 font-sans">
+{% block content %}{% endblock %}
+<script src="{{ url_for('static', path='js/api.js') }}"></script>
+</body>
+</html>

@@ -7,6 +7,12 @@ async function fetchChatRooms() {
     return await response.json();
 }
 
+async function fetchChatRoom(roomId) {
+    const response = await fetch(`${apiEndpoint}/chat/rooms/${roomId}`);
+
+    return await response.json();
+}
+
 async function createChatRoom(name) {
     const response = await fetch(`${apiEndpoint}/chat/rooms/new`, {
         method: 'POST',
@@ -18,6 +24,7 @@ async function createChatRoom(name) {
 
     return await response.json();
 }
+
 
 async function connectChatRoomSocket(roomId, username) {
     return new WebSocket(`${socketEndpoint}/chat/${roomId}/connect/${username}`);

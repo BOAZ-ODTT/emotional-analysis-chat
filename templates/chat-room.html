@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex items-center h-screen flex-col bg-white">
+	<div id="chatRoomContainer" class="flex w-full max-w-xl h-screen flex-col bg-gray-100 overflow-hidden">
+		<header class="flex-col shrink-0 items-center justify-between border-b bg-white px-4 py-2">
+			<div class="flex items-center gap-2 pt-1">
+				<button onclick="goBack()" class="p-1 rounded hover:bg-gray-300 focus:outline-none">
+					<
+				</button>
+				<div class="flex font-semibold">
+					<div id="roomName" class="pl-4 text-lg">Chat Rooms</div>
+					<div id="roomUserCount" class="pl-2 text-gray-500 text-sm content-center">
+						N
+					</div>
+
+				</div>
+
+			</div>
+			<div class="flex">
+
+			</div>
+		</header>
+
+		<div class="flex-col flex-1 relative">
+			<div class="flex h-full flex-col justify-between">
+				<div id="systemAlertsContainer"
+				     class="absolute px-4 w-full left-0 top-2 left-1/2 transform -translate-x-1/2 space-y-2 ">
+					<!-- System alerts will be displayed here -->
+				</div>
+				<div id="messagesContainer" class="overflow-y-scroll p-4 h-[70vh]">
+					<div class="space-y-4"></div>
+				</div>
+				<div class="flex p-2 shrink-0 items-center border-t bg-white px-4">
+					<input id="messageInput"
+					       class="flex h-10 w-full border border-input ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1 rounded-lg bg-gray-100 px-4 py-2 text-sm focus:bg-white"
+					       placeholder="Type your message..."
+					       type="text"
+					/>
+					<button id="sendButton"
+					        class="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 w-10 ml-2 rounded-full">
+						<img src="{{ url_for('static', path='/icons/message_send_icon.svg') }}" alt="message_send_icon">
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	const roomName = document.getElementById("roomName");
+	const messagesContainer = document.getElementById('messagesContainer');
+  const roomUserCount = document.getElementById('roomUserCount');
+	const systemAlertsContainer = document.getElementById('systemAlertsContainer');
+
+	const MessageType = {
+		USER_MESSAGE: "USER_MESSAGE",
+		SYSTEM_MESSAGE: "SYSTEM_MESSAGE",
+	}
+
+	const MessageEventType = {
+		USER_JOINED: 'USER_JOINED',
+		USER_LEFT: 'USER_LEFT',
+	};
+
+	let myName = "{{ username }}";
+	let roomId = "{{ room_id }}";
+	let ws = null;
+	let alerts = [];
+
+
+	function setMyName(newUserName) {
+		myName = newUserName;
+	}
+
+
+	document.addEventListener('DOMContentLoaded', async function () {
+		try {
+			await joinRoom(roomId);
+			await updateChatRoomInfo(roomId);
+		} catch (e) {
+			alert("채팅방에 접속하는 중 오류가 발생했습니다. 메인화면으로 이동합니다.");
+			location.href = '/';
+		}
+	});
+
+	async function updateChatRoomInfo(roomId) {
+		try {
+			const {room_name, user_count} = await fetchChatRoom(roomId);
+
+			roomName.innerText = room_name;
+			roomUserCount.innerText = user_count;
+
+		} catch (e) {
+			alert("채팅방 정보를 불러오는 중 오류가 발생했습니다. 메인화면으로 이동합니다.");
+			location.href = '/';
+		}
+	}
+
+	function goBack() {
+		location.href = '/';
+	}
+
+
+	function showAlert(message) {
+		const alertContainer = document.getElementById('systemAlertsContainer');
+
+		if (alertContainer.children.length >= 3) {
+			const oldestAlert = alertContainer.children[0];
+			if (oldestAlert) {
+				oldestAlert.classList.add('fade-outable-fast', 'opacity-0');
+				setTimeout(() => {
+					alertContainer.removeChild(oldestAlert);
+				}, 1);
+			}
+		}
+
+		const alertBox = document.createElement('div');
+
+		alertBox.className = 'w-full bg-gray-700 text-white text-sm font-bold rounded-lg border shadow-lg p-2 opacity-90 fade-outable';
+		alertBox.innerText = message;
+		alertContainer.appendChild(alertBox);
+
+
+		const showTimeForAlert = 9000;
+		const fadeOutTime = 1000;
+
+		setTimeout(() => {
+			// 다른 코드에서 alertBox가 삭제되었을 경우를 대비하여 체크
+			if (!alertContainer.contains(alertBox)) {
+				return;
+			}
+			alertBox.classList.add('opacity-0');
+		}, showTimeForAlert);
+
+		setTimeout(() => {
+			// 다른 코드에서 alertBox가 삭제되었을 경우를 대비하여 체크
+			if (!alertContainer.contains(alertBox)) {
+				return;
+			}
+			alertContainer.removeChild(alertBox);
+		}, showTimeForAlert + fadeOutTime);
+	}
+
+
+	function sendMessage() {
+		const input = document.getElementById('messageInput');
+
+		if (input.value) {
+			const message = {
+				username: myName,
+				message: input.value
+			};
+
+			let messageJSON = JSON.stringify(message);
+			ws.send(messageJSON);
+			input.value = '';
+		}
+	}
+
+	function createMessageElement(name, message, event_type = undefined, sentAt, isOwnMessage = true) {
+		const messageElement = document.createElement('div');
+		const messageContainer = document.createElement('div');
+		const messageContentElement = document.createElement('div');
+		const messageSentAtElement = document.createElement('div');
+
+		messageElement.classList.add('flex', 'items-start', 'gap-3', 'mt-5', 'mb-5');
+		messageContainer.classList.add('rounded-lg', 'p-3', 'shadow-sm', 'break-words', 'max-w-full');
+
+		messageContentElement.textContent = message;
+		messageSentAtElement.textContent = sentAt;
+		messageSentAtElement.classList.add('mt-2', 'text-xs');
+
+		if (isOwnMessage) {
+			messageElement.classList.add('justify-end');
+			messageContainer.classList.add('bg-blue-500', 'text-white');
+			messageSentAtElement.classList.add('text-white-500', 'opacity-30');
+		} else {
+			messageContainer.classList.add('bg-white');
+
+			messageContentElement.classList.add('text-sm', 'text-gray');
+			messageSentAtElement.classList.add('text-gray-500', 'opacity-30');
+		}
+
+		if (name) {
+			const nameElement = document.createElement('div');
+			nameElement.classList.add('font-normal', 'text-xs', 'opacity-50');
+			nameElement.textContent = name;
+			messageContainer.appendChild(nameElement);
+		}
+
+		messageContainer.appendChild(messageContentElement);
+		messageContainer.appendChild(messageSentAtElement);
+		messageElement.appendChild(messageContainer);
+
+		return messageElement;
+	}
+
+	function handleMessage(message) {
+		const {
+			username,
+			message: messageContent,
+			message_type: messageType,
+			event_type: eventType,
+			sent_at: sentAt
+		} = message;
+		const sentAtStr = new Date(sentAt ?? new Date()).toLocaleTimeString();
+
+		if (messageType === MessageType.SYSTEM_MESSAGE) {
+			if (eventType === MessageEventType.USER_JOINED || eventType === MessageEventType.USER_LEFT) {
+				updateChatRoomInfo(roomId);
+				// 입장 메시지 추가
+
+				const eventMessageContainer = document.createElement('div')
+				eventMessageContainer.classList.add('text-center', 'text-sm', 'text-gray-500');
+				eventMessageContainer.textContent = messageContent;
+
+				messagesContainer.appendChild(
+					eventMessageContainer
+				);
+			} else {
+				showAlert(messageContent);
+			}
+		}
+
+		if (messageType === MessageType.USER_MESSAGE) {
+			let isOwnMessage = myName === username;
+			const messageElement = createMessageElement(username, messageContent, eventType, sentAtStr, isOwnMessage);
+			messagesContainer.appendChild(messageElement);
+		}
+
+		scrollToBottom();
+	}
+
+	function scrollToBottom() {
+		messagesContainer.scrollTop = messagesContainer.scrollHeight;
+	}
+
+	async function joinRoom(roomId) {
+		ws = await connectChatRoomSocket(roomId, myName);
+
+		ws.onopen = function () {
+			console.log("Connected to WebSocket server");
+		};
+
+		ws.onmessage = function (event) {
+			const message = JSON.parse(event.data);
+			handleMessage(message);
+		};
+
+		ws.onclose = function () {
+			ws = null;
+			alert("채팅방이 종료되었습니다. 메인화면으로 이동합니다.");
+			location.href = '/';
+		};
+
+		ws.onerror = function (error) {
+			console.error("WebSocket error:", error);
+		};
+
+		setMyName(myName);
+	}
+
+	document.getElementById('sendButton').addEventListener('click', sendMessage);
+
+	document.getElementById('messageInput').addEventListener('keypress', function (event) {
+		if (event.key === 'Enter') {
+			sendMessage();
+		}
+	});
+</script>
+{% endblock %}

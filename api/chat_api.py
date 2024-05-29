@@ -6,6 +6,8 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from core.dependencies import chat_room_manager
 from dto.chat_room_response import ChatRoomResponse, ListChatRoomsResponse
+from service.chat.chat_room_manager import NotFoundChatRoomException
+from service.chat.message import MessageType
 from service.chat.user_connection import UserConnection
 
 router = APIRouter(prefix="/v1/chat")
@@ -19,8 +21,14 @@ async def create_chat_room():
     # 채팅방 클렌징을 위해 일정 시간동안 입장한 사람이 없다면 채팅방 제거
     async def check_and_clear_inactive_room(room_id):
         await asyncio.sleep(10)
-        if chat_room_manager.count_user_in_room(room_id=room_id) == 0:
-            chat_room_manager.delete_chat_room(room_id=room_id)
+        try:
+            if chat_room_manager.count_user_in_room(room_id=room_id) == 0:
+                chat_room_manager.delete_chat_room(room_id=room_id)
+        except NotFoundChatRoomException:
+            pass
+        except Exception as e:
+            print(e)
+
 
     asyncio.create_task(check_and_clear_inactive_room(new_room_id))
 
@@ -44,6 +52,22 @@ async def list_rooms():
     )
 
 
+@router.get("/rooms/{room_id}")
+async def get_room(room_id: str):
+    room = chat_room_manager.get_chat_room(room_id=room_id)
+
+    if room is None:
+        return {"message": f"Chat room {room_id} not found"}, 404
+
+    return ChatRoomResponse(
+        room_id=room.room_id,
+        room_name=room.room_name,
+        user_count=room.count_connections(),
+    )
+
+
+
+
 @router.websocket("/{room_id}/connect/{username}")
 async def connect_chat_room(websocket: WebSocket, room_id: str, username: str):
     connection = UserConnection(
@@ -57,6 +81,7 @@ async def connect_chat_room(websocket: WebSocket, room_id: str, username: str):
 
         while True:
             message = await connection.receive_message()
+            message.message_type = MessageType.USER_MESSAGE
             await chat_room_manager.broadcast(room_id=room_id, message=message)
 
     except WebSocketDisconnect:
