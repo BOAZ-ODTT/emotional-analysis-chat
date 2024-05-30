@@ -66,9 +66,9 @@ async def broadcast_emotion_message():
                     )
                     continue
 
-                # 임의로 최근 20개 메시지를 활용
+                # 임의로 최근 메시지를 활용
                 # 안정성을 위해 글자수 제한이 필요해보이지만 지금은 위험도가 낮은 걸로 판단되어 제한하지 않음
-                target_messages = messages[-20:]
+                target_messages = messages[-10:]
                 combined_message = "\n".join([message.message for message in target_messages])
 
                 emotion_text = emotion_classifier.classify(combined_message)
