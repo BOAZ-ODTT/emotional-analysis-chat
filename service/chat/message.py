@@ -16,6 +16,7 @@ class MessageEventType(Enum):
 
 
 class Message(BaseModel):
+    user_id: Optional[str] = None
     username: str
     message: str
     message_type: Optional[MessageType] = None

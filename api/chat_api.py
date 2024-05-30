@@ -70,8 +70,9 @@ async def get_room(room_id: str):
 
 @router.websocket("/{room_id}/connect/{username}")
 async def connect_chat_room(websocket: WebSocket, room_id: str, username: str):
+    user_id = str(uuid.uuid4())
     connection = UserConnection(
-        user_id=str(uuid.uuid4()),
+        user_id=user_id,
         websocket=websocket,
         username=username,
     )
@@ -82,6 +83,7 @@ async def connect_chat_room(websocket: WebSocket, room_id: str, username: str):
         while True:
             message = await connection.receive_message()
             message.message_type = MessageType.USER_MESSAGE
+            message.user_id = user_id
             await chat_room_manager.broadcast(room_id=room_id, message=message)
 
     except WebSocketDisconnect:
